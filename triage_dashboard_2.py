@@ -169,52 +169,81 @@ def load_css():
             background: transparent !important;
         }}
         
-        /* Button styling improvements - professional and clean */
+        /* Button styling improvements - clean and professional */
         .stButton > button {{
-            border-radius: 0.375rem;
-            border: 1px solid {COLORS['primary_blue']};
-            background-color: {COLORS['primary_blue']};
-            color: white;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            box-shadow: none;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
+            border-radius: 0.375rem !important;
+            border: none !important;
+            background-color: {COLORS['primary_blue']} !important;
+            color: white !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            box-shadow: none !important;
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem !important;
+            width: 100% !important;
         }}
         
         .stButton > button:hover {{
-            background-color: {COLORS['primary_teal']};
-            border-color: {COLORS['primary_teal']};
-            transform: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: {COLORS['primary_teal']} !important;
+            transform: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
         }}
         
         .stButton > button:focus {{
-            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.2);
-            outline: none;
+            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.2) !important;
+            outline: none !important;
         }}
         
-        /* Primary button variant */
-        .stButton[data-testid="baseButton-primary"] > button {{
-            background-color: {COLORS['accent_coral']};
-            border-color: {COLORS['accent_coral']};
+        .stButton > button:active {{
+            background-color: {COLORS['secondary_deep_teal']} !important;
+            transform: translateY(1px) !important;
         }}
         
-        .stButton[data-testid="baseButton-primary"] > button:hover {{
-            background-color: #e55a3a;
-            border-color: #e55a3a;
+        /* Remove any default button styling */
+        .stButton > button * {{
+            background: transparent !important;
         }}
         
-        /* Secondary button variant */
-        .stButton[data-testid="baseButton-secondary"] > button {{
-            background-color: transparent;
-            border-color: {COLORS['primary_blue']};
-            color: {COLORS['primary_blue']};
+        /* Specific button color variants */
+        .stButton[data-testid*="review"] > button {{
+            background-color: {COLORS['primary_blue']} !important;
         }}
         
-        .stButton[data-testid="baseButton-secondary"] > button:hover {{
-            background-color: {COLORS['primary_blue']};
-            color: white;
+        .stButton[data-testid*="contact"] > button {{
+            background-color: {COLORS['primary_teal']} !important;
+        }}
+        
+        .stButton[data-testid*="crisis"] > button {{
+            background-color: {COLORS['accent_coral']} !important;
+        }}
+        
+        .stButton[data-testid*="urgent"] > button {{
+            background-color: {COLORS['secondary_sandstone']} !important;
+            color: {COLORS['neutral_charcoal']} !important;
+        }}
+        
+        /* Download button styling */
+        .stDownloadButton > button {{
+            background-color: {COLORS['accent_green']} !important;
+            border: none !important;
+            color: white !important;
+            border-radius: 0.375rem !important;
+            font-weight: 500 !important;
+        }}
+        
+        .stDownloadButton > button:hover {{
+            background-color: #6bc373 !important;
+        }}
+        
+        /* Primary action buttons */
+        .stButton[key*="generate"] > button,
+        .stButton[key*="ai"] > button {{
+            background-color: {COLORS['accent_coral']} !important;
+        }}
+        
+        .stButton[key*="generate"] > button:hover,
+        .stButton[key*="ai"] > button:hover {{
+            background-color: #e55a3a !important;
         }}
         
         /* Section headers */
@@ -1217,18 +1246,13 @@ def main():
                 with col1:
                     st.write(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['Risk Level']}")
                 with col2:
-                    if st.button("📋 Review", key=f"review_{veteran['Veteran ID']}"):
-                        st.session_state.selected_veteran = veteran['Veteran ID']
-                        st.rerun()
+                    st.button("📋 Review", key=f"review_{veteran['Veteran ID']}")
                 with col3:
-                    if st.button("📞 Contact Info", key=f"contact_{veteran['Veteran ID']}"):
-                        st.info(f"Contact method: {veteran.get('Contact Method', 'Phone')}")
+                    st.button("📞 Contact", key=f"contact_{veteran['Veteran ID']}")
                 with col4:
-                    if st.button("🏥 Crisis Protocol", key=f"crisis_{veteran['Veteran ID']}"):
-                        st.error("Crisis intervention protocol activated")
+                    st.button("🏥 Crisis", key=f"crisis_{veteran['Veteran ID']}")
                 with col5:
-                    if st.button("📅 Urgent Schedule", key=f"urgent_{veteran['Veteran ID']}"):
-                        st.success("Urgent appointment scheduling initiated")
+                    st.button("📅 Schedule", key=f"urgent_{veteran['Veteran ID']}")
     else:
         st.warning("⚠️ No veterans match the current criteria. Adjust filters to view data.")
 
@@ -1426,11 +1450,10 @@ def main():
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                if st.button("📋 Update Assessment", key="update_assessment"):
-                    st.success("Assessment update form opened in clinical system")
+                st.button("📋 Update Assessment", key="update_assessment")
             
             with col2:
-                if st.button("📞 Prepare Contact", key="prep_contact"):
+                if st.button("📞 Contact Info", key="prep_contact"):
                     contact_info = f"""
                     **Contact Information for {veteran['Name']}:**
                     - Preferred Method: {veteran['Contact Method']}
@@ -1445,8 +1468,7 @@ def main():
                     st.success(f"{urgency} appointment scheduling initiated")
             
             with col4:
-                if st.button("📧 Generate Referral", key="generate_referral"):
-                    st.info("Referral documentation generated based on assessment")
+                st.button("📧 Generate Referral", key="generate_referral")
 
             # Clinical notes interface
             st.markdown("### 📝 Clinical Documentation")

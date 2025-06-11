@@ -8,8 +8,8 @@ def load_modern_css():
         
         /* CSS Variables for Design System */
         :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
+            --primary: #60a5fa;
+            --primary-dark: #3b82f6;
             --primary-light: #93c5fd;
             --secondary: #10b981;
             --secondary-dark: #059669;
@@ -19,7 +19,7 @@ def load_modern_css():
             --danger-dark: #dc2626;
             --success: #22c55e;
             --warning: #f59e0b;
-            --info: #3b82f6;
+            --info: #60a5fa;
             
             --surface: #ffffff;
             --surface-elevated: #f8fafc;
@@ -103,7 +103,7 @@ def load_modern_css():
         
         /* Modern Button System */
         .stButton > button {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
             color: var(--text-inverse) !important;
             border: none !important;
             border-radius: var(--radius-md) !important;

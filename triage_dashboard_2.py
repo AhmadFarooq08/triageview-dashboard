@@ -322,6 +322,58 @@ Keep response concise and practical (under 200 words).
     except Exception as e:
         return f"Error processing question: {str(e)}"
 
+def ask_ai_individual_question(question, veteran_data):
+    """Ask AI questions about a specific veteran"""
+    try:
+        veteran = veteran_data.iloc[0]
+        prompt = f"""
+As a clinical psychologist specializing in veteran mental health, answer this question about a specific veteran:
+
+QUESTION: {question}
+
+VETERAN PROFILE:
+- ID: {veteran['Veteran ID']}
+- Name: {veteran.get('Name', 'Not provided')}
+- Age: {veteran['Age']}, Gender: {veteran['Gender']}
+- Military Background: {veteran['Branch']}, {veteran['Service Era']}
+- Risk Level: {veteran['Risk Level']} (Score: {veteran['Risk Score']})
+
+CLINICAL ASSESSMENTS:
+- C-SSRS Screen: {veteran['C-SSRS Screen']}
+- PHQ-9 Q9 Self-Harm: {veteran['PHQ-9 Q9 (Self-Harm)']}
+- PHQ-9 Depression Score: {veteran['PHQ-9 Score']}/27
+- GAD-7 Anxiety Score: {veteran['GAD-7 Score']}/21
+- PCL-5 PTSD Score: {veteran['PCL-5 Score']}/80
+
+SOCIAL FACTORS:
+- Housing Status: {veteran['Housing Status']}
+- Social Support: {veteran['Social Support']}
+- Substance Use Risk: {veteran['Substance Use Risk']}
+- Emergency Contact: {veteran['Emergency Contact']}
+- Transportation: {veteran['Transportation']}
+- Previous Mental Health Treatment: {veteran['Previous Mental Health Treatment']}
+
+CLINICAL NOTES:
+- Priority Notes: {veteran.get('Priority Notes', 'None')}
+- Assigned Clinician: {veteran['Assigned Clinician']}
+- Last Contact: {veteran['Last Contact']}
+- Contact Method: {veteran['Contact Method']}
+
+Please provide a professional, clinical response that:
+1. Directly addresses the question about this specific veteran
+2. References relevant assessment scores and risk factors
+3. Considers the veteran's unique circumstances
+4. Provides actionable clinical recommendations when appropriate
+5. Uses professional medical terminology
+
+Keep response focused and practical (under 250 words).
+        """
+        
+        return call_gemini_api(prompt, "gemini-1.5-flash")
+        
+    except Exception as e:
+        return f"Error processing individual question: {str(e)}"
+
 # --- Enhanced Synthetic Data Generation ---
 @st.cache_data
 def generate_synthetic_data(num_records=100):
@@ -981,6 +1033,55 @@ def main():
         if selected_vet_id:
             veteran = df_filtered[df_filtered["Veteran ID"] == selected_vet_id].iloc[0]
             
+            # AI Q&A Section for Individual Veteran
+            st.subheader("💬 Ask AI About This Veteran")
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                individual_question = st.text_input(
+                    f"Ask about {veteran['Name']}:",
+                    placeholder="e.g., What treatment approach would you recommend? What are the primary risk factors?",
+                    key=f"individual_question_{selected_vet_id}"
+                )
+            
+            with col2:
+                ask_individual_button = st.button(
+                    "🤖 Ask About Veteran", 
+                    key=f"ask_individual_{selected_vet_id}",
+                    type="secondary"
+                )
+            
+            # Process individual question
+            if ask_individual_button and individual_question:
+                with st.spinner("🤖 Analyzing veteran profile..."):
+                    vet_data = df_filtered[df_filtered["Veteran ID"] == selected_vet_id]
+                    individual_answer = ask_ai_individual_question(individual_question, vet_data)
+                    
+                    # Store the Q&A for this veteran
+                    qa_key = f"{selected_vet_id}_qa"
+                    if qa_key not in st.session_state:
+                        st.session_state[qa_key] = []
+                    
+                    st.session_state[qa_key].append({
+                        "question": individual_question,
+                        "answer": individual_answer,
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    })
+            
+            # Display previous Q&A for this veteran
+            qa_key = f"{selected_vet_id}_qa"
+            if qa_key in st.session_state and st.session_state[qa_key]:
+                st.subheader("📝 Previous Questions & Answers")
+                for i, qa in enumerate(reversed(st.session_state[qa_key])):  # Show most recent first
+                    with st.expander(f"Q: {qa['question'][:50]}... ({qa['timestamp']})", expanded=(i==0)):
+                        st.markdown(f"**Question:** {qa['question']}")
+                        if "Error" not in qa['answer'] and "API Error" not in qa['answer']:
+                            st.success("🤖 AI Response:")
+                            st.info(qa['answer'])
+                        else:
+                            st.error("❌ AI service unavailable")
+                            st.warning(qa['answer'])
+            
             # Display AI assessment if available
             if selected_vet_id in st.session_state.ai_summaries:
                 assessment_text = st.session_state.ai_summaries[selected_vet_id]
@@ -1149,8 +1250,17 @@ def main():
                     else:
                         st.warning("Please enter documentation before saving")
 
-            # Export individual veteran report
+            # Export individual veteran report with Q&A
             if st.button("📊 Generate Individual Report"):
+                # Include Q&A history in the report
+                qa_history = ""
+                qa_key = f"{selected_vet_id}_qa"
+                if qa_key in st.session_state and st.session_state[qa_key]:
+                    qa_history = "\nAI CONSULTATION HISTORY:\n" + "="*50 + "\n"
+                    for qa in st.session_state[qa_key]:
+                        qa_history += f"\nQ ({qa['timestamp']}): {qa['question']}\n"
+                        qa_history += f"A: {qa['answer']}\n{'-'*30}\n"
+                
                 individual_report = f"""
 INDIVIDUAL VETERAN ASSESSMENT REPORT
 ===================================
@@ -1174,15 +1284,15 @@ Assigned Clinician: {veteran['Assigned Clinician']}
 RISK FACTORS:
 {chr(10).join([f"- {k}: {v}" for k, v in risk_factors.items()])}
 
-AI ASSESSMENT:
+AI COMPREHENSIVE ASSESSMENT:
 {st.session_state.ai_summaries.get(selected_vet_id, 'AI assessment not generated')}
-
+{qa_history}
 ===================================
 Generated by TriageView Clinical Decision Support System
                 """
                 
                 st.download_button(
-                    label="📥 Download Individual Report",
+                    label="📥 Download Complete Individual Report",
                     data=individual_report,
                     file_name=f"veteran_report_{veteran['Veteran ID']}_{datetime.now().strftime('%Y%m%d')}.txt",
                     mime="text/plain"

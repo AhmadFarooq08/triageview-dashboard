@@ -64,9 +64,27 @@ def load_css():
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }}
         
-        /* Sidebar Styling */
+        /* Fix sidebar layout issues */
         .st-emotion-cache-16txtl3 {{
             background-color: {COLORS['neutral_white']};
+            border-right: 1px solid {COLORS['neutral_light_gray']};
+        }}
+        
+        /* Fix main content area to prevent text wrapping issues */
+        .main .block-container {{
+            max-width: none !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
+        }}
+        
+        /* Ensure proper responsive behavior */
+        @media (max-width: 768px) {{
+            .main .block-container {{
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }}
         }}
         
         /* Headers and Titles */
@@ -106,14 +124,44 @@ def load_css():
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }}
         
-        /* AI Summary Box */
+        /* NEW: Improved AI Summary Box Styling */
         .ai-summary-box {{
-            background: linear-gradient(135deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
-            color: white;
+            background: linear-gradient(135deg, rgba(91, 155, 211, 0.08), rgba(62, 138, 126, 0.08));
+            border: 2px solid {COLORS['primary_blue']};
+            border-radius: 12px;
             padding: 1.5rem;
-            border-radius: 0.5rem;
             margin: 1rem 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(91, 155, 211, 0.15);
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .ai-summary-box::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
+        }}
+        
+        .ai-summary-box h4 {{
+            color: {COLORS['primary_blue']};
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+        
+        .ai-summary-box p {{
+            color: {COLORS['neutral_charcoal']};
+            line-height: 1.6;
+            margin-bottom: 0;
+            font-size: 0.95rem;
         }}
         
         /* Action Button Styling */
@@ -380,6 +428,88 @@ def load_css():
         .stDownloadButton > button:hover {{
             background-color: #6bc373;
             border-color: #6bc373;
+        }}
+        
+        /* Individual AI Assessment Box */
+        .individual-ai-box {{
+            background: linear-gradient(135deg, rgba(62, 138, 126, 0.08), rgba(91, 155, 211, 0.08));
+            border: 2px solid {COLORS['primary_teal']};
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 4px 12px rgba(62, 138, 126, 0.15);
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .individual-ai-box::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, {COLORS['primary_teal']}, {COLORS['accent_green']});
+        }}
+        
+        .individual-ai-box h4 {{
+            color: {COLORS['primary_teal']};
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+        
+        .individual-ai-box p {{
+            color: {COLORS['neutral_charcoal']};
+            line-height: 1.6;
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }}
+        
+        /* Q&A Section Styling */
+        .qa-container {{
+            background: rgba(247, 250, 252, 0.8);
+            border: 1px solid rgba(91, 155, 211, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }}
+        
+        .qa-question {{
+            color: {COLORS['primary_blue']};
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }}
+        
+        .qa-answer {{
+            color: {COLORS['neutral_charcoal']};
+            line-height: 1.5;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+            border-left: 3px solid {COLORS['primary_blue']};
+        }}
+        
+        /* Ensure columns stay properly aligned */
+        .row-widget.stHorizontal > div {{
+            flex-wrap: nowrap !important;
+        }}
+        
+        /* Fix text wrapping in metrics */
+        .metric-container {{
+            min-width: 0 !important;
+            flex-shrink: 1 !important;
+        }}
+        
+        /* Responsive text handling */
+        .stMetric label {{
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -1013,10 +1143,14 @@ def main():
                 """
                 answer = ask_ai_question(question, context)
                 
-                # Display answer with status indicator
+                # Display answer with improved styling
                 if "Error" not in answer and "API Error" not in answer:
-                    st.success("🤖 AI Response:")
-                    st.info(answer)
+                    st.markdown(f"""
+                    <div class="qa-container">
+                    <div class="qa-question">🤖 AI Response:</div>
+                    <div class="qa-answer">{answer}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
                     st.error("❌ AI service unavailable. Please try again.")
                     st.warning(answer)
@@ -1333,8 +1467,12 @@ def main():
                     with st.expander(f"Q: {qa['question'][:50]}... ({qa['timestamp']})", expanded=(i==0)):
                         st.markdown(f"**Question:** {qa['question']}")
                         if "Error" not in qa['answer'] and "API Error" not in qa['answer']:
-                            st.success("🤖 AI Response:")
-                            st.info(qa['answer'])
+                            st.markdown(f"""
+                            <div class="qa-container">
+                            <div class="qa-question">🤖 AI Response:</div>
+                            <div class="qa-answer">{qa['answer']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
                             st.error("❌ AI service unavailable")
                             st.warning(qa['answer'])
@@ -1344,7 +1482,7 @@ def main():
                 assessment_text = st.session_state.ai_summaries[selected_vet_id]
                 if "Error" not in assessment_text and "API Error" not in assessment_text:
                     st.markdown(f"""
-                    <div class="ai-summary-box">
+                    <div class="individual-ai-box">
                     <h4>🤖 AI Clinical Assessment for {veteran['Name']}</h4>
                     <p>{assessment_text}</p>
                     </div>

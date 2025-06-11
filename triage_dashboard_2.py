@@ -17,20 +17,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- VETERAN-FOCUSED COLOR PALETTE ---
+# --- MODERN FUTURISTIC COLOR PALETTE ---
 COLORS = {
-    "primary_blue": "#5B9BD3",      # Serene Sky Blue
-    "primary_teal": "#3E8A7E",      # Hopeful Teal Green
-    "secondary_light_sky": "#A8D8F0",
-    "secondary_deep_teal": "#2C6B5F",
-    "secondary_sandstone": "#D8C9B8",
-    "accent_coral": "#FF7F50",      # Vitality Coral
-    "accent_green": "#77DD77",      # Growth Sprout Green
+    "primary_blue": "#3B82F6",        # Modern vibrant blue
+    "primary_teal": "#06B6D4",        # Cyan accent
+    "secondary_light_sky": "#E0F2FE",
+    "secondary_deep_teal": "#0891B2",
+    "secondary_sandstone": "#F59E0B",
+    "accent_coral": "#EF4444",        # Modern red
+    "accent_green": "#10B981",        # Emerald green
+    "accent_purple": "#8B5CF6",       # Violet accent
     "neutral_white": "#FFFFFF",
-    "neutral_off_white": "#F8F8F8",
-    "neutral_light_gray": "#E0E0E0",
-    "neutral_medium_gray": "#757575",
-    "neutral_charcoal": "#333333"
+    "neutral_off_white": "#F8FAFC",
+    "neutral_light_gray": "#E2E8F0",
+    "neutral_medium_gray": "#64748B",
+    "neutral_charcoal": "#1E293B",
+    "dark_bg": "#0F172A",             # Dark theme
+    "glass_bg": "rgba(255, 255, 255, 0.1)",  # Glassmorphism
+    "glass_border": "rgba(255, 255, 255, 0.2)"
 }
 
 # --- Gemini AI Configuration (Free Tier) ---

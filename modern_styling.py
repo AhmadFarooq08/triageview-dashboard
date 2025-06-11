@@ -8,30 +8,30 @@ def load_modern_css():
         
         /* CSS Variables for Design System */
         :root {
-            --primary: #60a5fa;
+            --primary: #5B9BD3;
             --primary-dark: #3b82f6;
             --primary-light: #93c5fd;
-            --secondary: #10b981;
-            --secondary-dark: #059669;
-            --accent: #f59e0b;
-            --accent-dark: #d97706;
+            --secondary: #3E8A7E;
+            --secondary-dark: #2C6B5F;
+            --accent: #FF7F50;
+            --accent-dark: #e55a3a;
             --danger: #ef4444;
             --danger-dark: #dc2626;
-            --success: #22c55e;
+            --success: #77DD77;
             --warning: #f59e0b;
             --info: #60a5fa;
             
             --surface: #ffffff;
             --surface-elevated: #f8fafc;
             --surface-hover: #f1f5f9;
-            --background: #f8fafc;
+            --background: #F8F8F8;
             --background-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             
             --border: #e2e8f0;
             --border-strong: #cbd5e1;
             --border-focus: var(--primary);
             
-            --text: #1e293b;
+            --text: #333333;
             --text-secondary: #64748b;
             --text-muted: #94a3b8;
             --text-inverse: #ffffff;
@@ -62,15 +62,39 @@ def load_modern_css():
         
         /* Global Reset and Base Styles */
         .stApp {
-            background: var(--background-gradient) !important;
+            background: var(--background) !important;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             color: var(--text) !important;
             line-height: 1.6 !important;
         }
         
+        /* Fix main container layout issues */
         .main .block-container {
-            max-width: 1200px !important;
+            max-width: none !important;
             padding: var(--spacing-xl) var(--spacing-lg) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        /* Ensure sidebar doesn't interfere with main content */
+        .st-emotion-cache-16txtl3 {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            height: 100vh !important;
+            z-index: 999 !important;
+            background: var(--surface) !important;
+            border-right: 1px solid var(--border) !important;
+            overflow-y: auto !important;
+        }
+        
+        /* Adjust main content when sidebar is open */
+        section[data-testid="stSidebar"][aria-expanded="true"] ~ .main {
+            margin-left: 21rem !important;
+        }
+        
+        section[data-testid="stSidebar"][aria-expanded="false"] ~ .main {
+            margin-left: 0 !important;
         }
         
         /* Typography Enhancements */
@@ -118,6 +142,7 @@ def load_modern_css():
             overflow: hidden !important;
             text-transform: none !important;
             letter-spacing: 0.025em !important;
+            width: 100% !important;
         }
         
         .stButton > button:before {
@@ -148,7 +173,7 @@ def load_modern_css():
         
         .stButton > button:focus {
             outline: none !important;
-            box-shadow: var(--shadow-lg), 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+            box-shadow: var(--shadow-lg), 0 0 0 3px rgba(91, 155, 211, 0.2) !important;
         }
         
         /* Button Variants */
@@ -165,18 +190,18 @@ def load_modern_css():
         
         .stButton[key*="ai"] > button,
         .stButton[key*="generate"] > button {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
-            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3) !important;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%) !important;
+            box-shadow: 0 4px 14px rgba(255, 127, 80, 0.3) !important;
         }
         
         .stButton[key*="contact"] > button {
             background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%) !important;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+            box-shadow: 0 4px 14px rgba(62, 138, 126, 0.3) !important;
         }
         
         /* Download Button */
         .stDownloadButton > button {
-            background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%) !important;
+            background: linear-gradient(135deg, var(--success) 0%, #6bc373 100%) !important;
             color: var(--text-inverse) !important;
             border: none !important;
             border-radius: var(--radius-md) !important;
@@ -225,6 +250,9 @@ def load_modern_css():
             font-size: 0.875rem !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }
         
         .stMetric [data-testid="metric-value"] {
@@ -252,7 +280,7 @@ def load_modern_css():
         .stSelectbox > div > div:focus-within,
         .stMultiSelect > div > div:focus-within {
             border-color: var(--border-focus) !important;
-            box-shadow: var(--shadow), 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+            box-shadow: var(--shadow), 0 0 0 3px rgba(91, 155, 211, 0.1) !important;
         }
         
         .stTextInput > div > div > input {
@@ -267,7 +295,7 @@ def load_modern_css():
         
         .stTextInput > div > div > input:focus {
             border-color: var(--border-focus) !important;
-            box-shadow: var(--shadow), 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+            box-shadow: var(--shadow), 0 0 0 3px rgba(91, 155, 211, 0.1) !important;
             outline: none !important;
         }
         
@@ -343,8 +371,8 @@ def load_modern_css():
         
         /* Status Messages */
         .stSuccess {
-            background: rgba(34, 197, 94, 0.1) !important;
-            border: 1px solid rgba(34, 197, 94, 0.2) !important;
+            background: rgba(119, 221, 119, 0.1) !important;
+            border: 1px solid rgba(119, 221, 119, 0.2) !important;
             border-radius: var(--radius-md) !important;
             color: #166534 !important;
             box-shadow: var(--shadow-sm) !important;
@@ -359,8 +387,8 @@ def load_modern_css():
         }
         
         .stInfo {
-            background: rgba(59, 130, 246, 0.1) !important;
-            border: 1px solid rgba(59, 130, 246, 0.2) !important;
+            background: rgba(91, 155, 211, 0.1) !important;
+            border: 1px solid rgba(91, 155, 211, 0.2) !important;
             border-radius: var(--radius-md) !important;
             color: #1e40af !important;
             box-shadow: var(--shadow-sm) !important;
@@ -374,42 +402,118 @@ def load_modern_css():
             box-shadow: var(--shadow-sm) !important;
         }
         
-        /* Special Components */
+        /* AI Summary Box Styling - Improved Light Design */
         .ai-summary-box {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%) !important;
-            border: 1px solid rgba(59, 130, 246, 0.2) !important;
-            border-radius: var(--radius-lg) !important;
-            padding: var(--spacing-xl) !important;
-            margin: var(--spacing-lg) 0 !important;
-            box-shadow: var(--shadow-md) !important;
+            background: linear-gradient(135deg, rgba(91, 155, 211, 0.08), rgba(62, 138, 126, 0.08)) !important;
+            border: 2px solid var(--primary) !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            margin: 1rem 0 !important;
+            box-shadow: 0 4px 12px rgba(91, 155, 211, 0.15) !important;
             position: relative !important;
             overflow: hidden !important;
         }
         
-        .ai-summary-box:before {
+        .ai-summary-box::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), #8b5cf6, var(--secondary));
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
         }
         
         .ai-summary-box h4 {
             color: var(--primary) !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
+            font-size: 1.2rem !important;
             font-weight: 600 !important;
-            margin-bottom: var(--spacing-md) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
         }
         
+        .ai-summary-box p {
+            color: var(--text) !important;
+            line-height: 1.6 !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* Individual AI Assessment Box - Different Style */
+        .individual-ai-box {
+            background: linear-gradient(135deg, rgba(62, 138, 126, 0.08), rgba(119, 221, 119, 0.08)) !important;
+            border: 2px solid var(--secondary) !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            margin: 1rem 0 !important;
+            box-shadow: 0 4px 12px rgba(62, 138, 126, 0.15) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .individual-ai-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary), var(--success));
+        }
+        
+        .individual-ai-box h4 {
+            color: var(--secondary) !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+        }
+        
+        .individual-ai-box p {
+            color: var(--text) !important;
+            line-height: 1.6 !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* Q&A Container Styling */
+        .qa-container {
+            background: rgba(247, 250, 252, 0.8) !important;
+            border: 1px solid rgba(91, 155, 211, 0.2) !important;
+            border-radius: 8px !important;
+            padding: 1rem !important;
+            margin: 0.5rem 0 !important;
+        }
+        
+        .qa-question {
+            color: var(--primary) !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .qa-answer {
+            color: var(--text) !important;
+            line-height: 1.5 !important;
+            padding: 0.5rem !important;
+            background: rgba(255, 255, 255, 0.7) !important;
+            border-radius: 4px !important;
+            border-left: 3px solid var(--primary) !important;
+        }
+        
+        /* Priority Alert */
         .priority-alert {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%) !important;
-            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+            background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%) !important;
+            color: var(--text-inverse) !important;
+            padding: 1rem !important;
             border-radius: var(--radius-lg) !important;
-            padding: var(--spacing-lg) !important;
             text-align: center !important;
             font-weight: 600 !important;
-            color: var(--danger-dark) !important;
             box-shadow: var(--shadow-md) !important;
             animation: pulse-alert 2s infinite !important;
         }
@@ -419,7 +523,7 @@ def load_modern_css():
             50% { box-shadow: var(--shadow-lg), 0 0 0 10px rgba(239, 68, 68, 0); }
         }
         
-        /* Sidebar */
+        /* Sidebar Improvements */
         .css-1d391kg {
             background: var(--surface) !important;
             border-right: 1px solid var(--border) !important;
@@ -482,6 +586,18 @@ def load_modern_css():
             visibility: hidden;
         }
         
+        /* Fix column layout issues */
+        .row-widget.stHorizontal > div {
+            flex-wrap: nowrap !important;
+            min-width: 0 !important;
+        }
+        
+        /* Ensure metrics containers don't overflow */
+        .metric-container {
+            min-width: 0 !important;
+            flex-shrink: 1 !important;
+        }
+        
         /* Responsive Design */
         @media (max-width: 768px) {
             .main .block-container {
@@ -499,6 +615,10 @@ def load_modern_css():
             .stButton > button {
                 padding: 0.625rem 1.25rem !important;
                 font-size: 0.8rem !important;
+            }
+            
+            section[data-testid="stSidebar"][aria-expanded="true"] ~ .main {
+                margin-left: 0 !important;
             }
         }
         
@@ -532,6 +652,27 @@ def load_modern_css():
                 transform: translateX(0);
             }
         }
+        
+        /* AI Status Indicators */
+        .ai-status-success {
+            background: linear-gradient(135deg, var(--success) 0%, #6bc373 100%) !important;
+            color: var(--text-inverse) !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--radius-md) !important;
+            margin: 0.5rem 0 !important;
+            box-shadow: var(--shadow-sm) !important;
+            font-weight: 500 !important;
+        }
+        
+        .ai-status-error {
+            background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%) !important;
+            color: var(--text-inverse) !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--radius-md) !important;
+            margin: 0.5rem 0 !important;
+            box-shadow: var(--shadow-sm) !important;
+            font-weight: 500 !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -539,7 +680,7 @@ def create_modern_container(content, title=None, subtitle=None, gradient=False):
     """Create a modern container with optional title and gradient"""
     gradient_style = ""
     if gradient:
-        gradient_style = "background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);"
+        gradient_style = "background: linear-gradient(135deg, rgba(91, 155, 211, 0.05) 0%, rgba(62, 138, 126, 0.05) 100%);"
     
     container_html = f"""
     <div style="
@@ -604,10 +745,10 @@ def create_metric_card(title, value, change=None, icon=None, color="primary"):
 def create_status_badge(text, status="default"):
     """Create a modern status badge"""
     status_colors = {
-        "success": ("var(--success)", "rgba(34, 197, 94, 0.1)"),
+        "success": ("var(--success)", "rgba(119, 221, 119, 0.1)"),
         "danger": ("var(--danger)", "rgba(239, 68, 68, 0.1)"),
         "warning": ("var(--warning)", "rgba(245, 158, 11, 0.1)"),
-        "info": ("var(--info)", "rgba(59, 130, 246, 0.1)"),
+        "info": ("var(--info)", "rgba(91, 155, 211, 0.1)"),
         "default": ("var(--text-secondary)", "var(--surface-elevated)")
     }
     

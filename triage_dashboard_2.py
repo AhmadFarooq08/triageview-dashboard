@@ -163,41 +163,58 @@ def load_css():
             margin: 0.5rem 0;
         }}
         
-        /* Chart container improvements */
+        /* Chart container improvements - remove white boxes */
         .js-plotly-plot {{
             border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: transparent !important;
         }}
         
-        /* Metric improvements */
-        .metric-container {{
-            background: linear-gradient(145deg, {COLORS['neutral_white']}, #f5f5f5);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid {COLORS['primary_blue']};
-            transition: transform 0.2s ease;
-        }}
-        
-        .metric-container:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }}
-        
-        /* Button styling improvements */
+        /* Button styling improvements - professional and clean */
         .stButton > button {{
-            border-radius: 0.5rem;
-            border: none;
-            background: linear-gradient(145deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
+            border-radius: 0.375rem;
+            border: 1px solid {COLORS['primary_blue']};
+            background-color: {COLORS['primary_blue']};
             color: white;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
         }}
         
         .stButton > button:hover {{
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background-color: {COLORS['primary_teal']};
+            border-color: {COLORS['primary_teal']};
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        .stButton > button:focus {{
+            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.2);
+            outline: none;
+        }}
+        
+        /* Primary button variant */
+        .stButton[data-testid="baseButton-primary"] > button {{
+            background-color: {COLORS['accent_coral']};
+            border-color: {COLORS['accent_coral']};
+        }}
+        
+        .stButton[data-testid="baseButton-primary"] > button:hover {{
+            background-color: #e55a3a;
+            border-color: #e55a3a;
+        }}
+        
+        /* Secondary button variant */
+        .stButton[data-testid="baseButton-secondary"] > button {{
+            background-color: transparent;
+            border-color: {COLORS['primary_blue']};
+            color: {COLORS['primary_blue']};
+        }}
+        
+        .stButton[data-testid="baseButton-secondary"] > button:hover {{
+            background-color: {COLORS['primary_blue']};
+            color: white;
         }}
         
         /* Section headers */
@@ -218,9 +235,9 @@ def load_css():
         
         /* Selectbox improvements */
         .stSelectbox > div > div {{
-            border-radius: 0.5rem;
-            border: 2px solid {COLORS['neutral_light_gray']};
-            transition: border-color 0.3s ease;
+            border-radius: 0.375rem;
+            border: 1px solid {COLORS['neutral_light_gray']};
+            transition: border-color 0.2s ease;
         }}
         
         .stSelectbox > div > div:focus-within {{
@@ -230,9 +247,9 @@ def load_css():
         
         /* Text input improvements */
         .stTextInput > div > div > input {{
-            border-radius: 0.5rem;
-            border: 2px solid {COLORS['neutral_light_gray']};
-            transition: all 0.3s ease;
+            border-radius: 0.375rem;
+            border: 1px solid {COLORS['neutral_light_gray']};
+            transition: all 0.2s ease;
         }}
         
         .stTextInput > div > div > input:focus {{
@@ -247,8 +264,8 @@ def load_css():
         
         /* Multiselect improvements */
         .stMultiSelect > div > div {{
-            border-radius: 0.5rem;
-            border: 2px solid {COLORS['neutral_light_gray']};
+            border-radius: 0.375rem;
+            border: 1px solid {COLORS['neutral_light_gray']};
         }}
         
         /* Loading spinner customization */
@@ -260,29 +277,76 @@ def load_css():
         .stSuccess {{
             background-color: {COLORS['accent_green']};
             color: white;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }}
         
         .stError {{
             background-color: {COLORS['accent_coral']};
             color: white;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }}
         
         .stInfo {{
             background-color: {COLORS['primary_blue']};
             color: white;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }}
         
         .stWarning {{
             background-color: #f39c12;
             color: white;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        /* Metric card improvements - remove boxes */
+        .metric-card {{
+            background: transparent;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid {COLORS['primary_blue']};
+            margin: 0.5rem 0;
+            transition: transform 0.2s ease;
+        }}
+        
+        .metric-card:hover {{
+            transform: translateY(-2px);
+        }}
+        
+        /* Custom expander styling */
+        .streamlit-expanderHeader {{
+            border-radius: 0.375rem;
+            background-color: #f8f9fa;
+        }}
+        
+        /* Remove excessive shadows and boxes */
+        .element-container {{
+            background: transparent !important;
+        }}
+        
+        /* Checkbox styling */
+        .stCheckbox > label {{
+            font-weight: 500;
+            color: {COLORS['neutral_charcoal']};
+        }}
+        
+        /* Download button styling */
+        .stDownloadButton > button {{
+            background-color: {COLORS['accent_green']};
+            border-color: {COLORS['accent_green']};
+            color: white;
+        }}
+        
+        .stDownloadButton > button:hover {{
+            background-color: #6bc373;
+            border-color: #6bc373;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -1011,198 +1075,87 @@ def main():
     # --- Analytics Overview ---
     st.header("📊 Analytics Overview")
     
-    # Create chart containers with improved styling
+    # Simple, clean chart layout without unnecessary containers
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     
     with col1:
-        st.markdown("""
-        <div style="background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
-        """, unsafe_allow_html=True)
         if not df_filtered.empty:
             fig1 = create_risk_distribution_chart(df_filtered)
             st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False})
         else:
             st.info("No data available for risk distribution chart.")
-        st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
-        st.markdown("""
-        <div style="background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
-        """, unsafe_allow_html=True)
         if not df_filtered.empty:
             fig2 = create_intake_timeline(df_filtered)
             st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
         else:
             st.info("No data available for intake timeline.")
-        st.markdown("</div>", unsafe_allow_html=True)
     
     with col3:
-        st.markdown("""
-        <div style="background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
-        """, unsafe_allow_html=True)
         if not df_filtered.empty:
             fig3 = create_clinician_workload_chart(df_filtered)
             st.plotly_chart(fig3, use_container_width=True, config={'displayModeBar': False})
         else:
             st.info("No data available for clinician workload.")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # --- Key Metrics Dashboard ---
     st.header("📈 Key Performance Indicators")
     
-    # Create enhanced metrics with better styling
+    # Clean metrics without excessive styling
     col1, col2, col3, col4, col5, col6 = st.columns(6, gap="small")
     
-    metrics_data = [
-        {
-            "col": col1,
-            "label": "🚨 Critical Risk",
-            "value": len(df_filtered[df_filtered['Risk Level'].str.contains('Critical', na=False)]),
-            "help": "Veterans requiring immediate intervention",
-            "color": COLORS['accent_coral']
-        },
-        {
-            "col": col2,
-            "label": "⚠️ High Risk",
-            "value": len(df_filtered[df_filtered['Risk Level'].str.contains('High', na=False)]),
-            "help": "Veterans requiring urgent attention",
-            "color": COLORS['secondary_sandstone']
-        },
-        {
-            "col": col3,
-            "label": "🔶 Medium Risk",
-            "value": len(df_filtered[df_filtered['Risk Level'] == 'Medium']),
-            "help": "Veterans requiring regular monitoring",
-            "color": COLORS['primary_blue']
-        },
-        {
-            "col": col4,
-            "label": "🟢 Low Risk",
-            "value": len(df_filtered[df_filtered['Risk Level'] == 'Low']),
-            "help": "Veterans with minimal risk factors",
-            "color": COLORS['accent_green']
-        },
-        {
-            "col": col5,
-            "label": "👥 Unassigned",
-            "value": len(df_filtered[df_filtered['Assigned Clinician'] == 'Unassigned']),
-            "help": "Veterans awaiting clinician assignment",
-            "color": COLORS['neutral_medium_gray']
-        },
-        {
-            "col": col6,
-            "label": "👤 Avg Age",
-            "value": f"{df_filtered['Age'].mean():.1f}" if not df_filtered.empty else "0.0",
-            "help": "Average age of veterans in current view",
-            "color": COLORS['primary_teal']
-        }
-    ]
+    with col1:
+        critical_count = len(df_filtered[df_filtered['Risk Level'].str.contains('Critical', na=False)])
+        st.metric("🚨 Critical", critical_count, help="Veterans requiring immediate intervention")
     
-    for metric in metrics_data:
-        with metric["col"]:
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(145deg, white, #f8f9fa);
-                border-radius: 0.75rem;
-                padding: 1rem;
-                text-align: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                border-left: 4px solid {metric['color']};
-                transition: transform 0.2s ease;
-                height: 100px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            ">
-                <div style="font-size: 0.8rem; color: {COLORS['neutral_medium_gray']}; margin-bottom: 0.25rem;">
-                    {metric['label']}
-                </div>
-                <div style="font-size: 1.8rem; font-weight: bold; color: {metric['color']};">
-                    {metric['value']}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    with col2:
+        high_count = len(df_filtered[df_filtered['Risk Level'].str.contains('High', na=False)])
+        st.metric("⚠️ High Risk", high_count, help="Veterans requiring urgent attention")
+    
+    with col3:
+        medium_count = len(df_filtered[df_filtered['Risk Level'] == 'Medium'])
+        st.metric("🔶 Medium", medium_count, help="Veterans requiring regular monitoring")
+    
+    with col4:
+        low_count = len(df_filtered[df_filtered['Risk Level'] == 'Low'])
+        st.metric("🟢 Low Risk", low_count, help="Veterans with minimal risk factors")
+    
+    with col5:
+        unassigned_count = len(df_filtered[df_filtered['Assigned Clinician'] == 'Unassigned'])
+        st.metric("👥 Unassigned", unassigned_count, help="Veterans awaiting clinician assignment")
+    
+    with col6:
+        avg_age = df_filtered['Age'].mean() if not df_filtered.empty else 0
+        st.metric("👤 Avg Age", f"{avg_age:.1f}", help="Average age of veterans in current view")
 
     # Additional clinical metrics
     if not df_filtered.empty:
         st.subheader("🔍 Clinical Insights")
+        col1, col2, col3, col4 = st.columns(4)
         
-        # Create enhanced insight metrics
-        col1, col2, col3, col4 = st.columns(4, gap="medium")
+        with col1:
+            homeless_count = len(df_filtered[df_filtered['Housing Status'] == 'Homeless'])
+            homeless_pct = (homeless_count / len(df_filtered)) * 100
+            st.metric("🏠 Housing Risk", f"{homeless_count} ({homeless_pct:.1f}%)",
+                     help="Veterans experiencing homelessness")
         
-        insights_data = [
-            {
-                "col": col1,
-                "icon": "🏠",
-                "title": "Housing Instability",
-                "count": len(df_filtered[df_filtered['Housing Status'] == 'Homeless']),
-                "total": len(df_filtered),
-                "help": "Veterans experiencing homelessness",
-                "color": COLORS['accent_coral']
-            },
-            {
-                "col": col2,
-                "icon": "🍺",
-                "title": "Substance Risk",
-                "count": len(df_filtered[df_filtered['Substance Use Risk'] == 'High']),
-                "total": len(df_filtered),
-                "help": "Veterans with high substance use risk",
-                "color": COLORS['secondary_sandstone']
-            },
-            {
-                "col": col3,
-                "icon": "👥",
-                "title": "Social Isolation",
-                "count": len(df_filtered[df_filtered['Social Support'] == 'Low']),
-                "total": len(df_filtered),
-                "help": "Veterans with limited social support",
-                "color": COLORS['primary_blue']
-            },
-            {
-                "col": col4,
-                "icon": "📊",
-                "title": "Avg PHQ-9",
-                "count": f"{df_filtered['PHQ-9 Score'].mean():.1f}",
-                "total": "27",
-                "help": "Average depression severity score",
-                "color": COLORS['primary_teal'],
-                "is_score": True
-            }
-        ]
+        with col2:
+            high_substance = len(df_filtered[df_filtered['Substance Use Risk'] == 'High'])
+            substance_pct = (high_substance / len(df_filtered)) * 100
+            st.metric("🍺 Substance Risk", f"{high_substance} ({substance_pct:.1f}%)",
+                     help="Veterans with high substance use risk")
         
-        for insight in insights_data:
-            with insight["col"]:
-                if insight.get("is_score"):
-                    display_text = f"{insight['count']}/{insight['total']}"
-                    percentage = ""
-                else:
-                    percentage = f" ({(insight['count'] / insight['total'] * 100):.1f}%)"
-                    display_text = f"{insight['count']}{percentage}"
-                
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(145deg, white, #f8f9fa);
-                    border-radius: 0.75rem;
-                    padding: 1.2rem;
-                    text-align: center;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    border-top: 4px solid {insight['color']};
-                    height: 120px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                ">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">
-                        {insight['icon']}
-                    </div>
-                    <div style="font-size: 0.85rem; color: {COLORS['neutral_medium_gray']}; margin-bottom: 0.25rem; font-weight: 600;">
-                        {insight['title']}
-                    </div>
-                    <div style="font-size: 1.4rem; font-weight: bold; color: {insight['color']};">
-                        {display_text}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        with col3:
+            low_support = len(df_filtered[df_filtered['Social Support'] == 'Low'])
+            support_pct = (low_support / len(df_filtered)) * 100
+            st.metric("👥 Social Risk", f"{low_support} ({support_pct:.1f}%)",
+                     help="Veterans with limited social support")
+        
+        with col4:
+            avg_phq9 = df_filtered['PHQ-9 Score'].mean()
+            st.metric("📊 Avg PHQ-9", f"{avg_phq9:.1f}",
+                     help="Average depression severity score")
 
     # --- Triage Queue ---
     st.header(f"🎯 Triage Queue ({len(df_filtered)} Veterans)")

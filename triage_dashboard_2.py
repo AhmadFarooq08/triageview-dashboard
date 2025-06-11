@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import json
 import requests
 import time
+from modern_styling import load_modern_css, create_modern_container, create_metric_card, create_status_badge
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -16,6 +17,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Load modern CSS immediately after page config
+load_modern_css()
 
 # --- VETERAN-FOCUSED COLOR PALETTE ---
 COLORS = {

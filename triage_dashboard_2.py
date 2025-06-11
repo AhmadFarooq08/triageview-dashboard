@@ -143,6 +143,7 @@ def load_css():
             border-radius: 0.5rem;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid {COLORS['neutral_light_gray']};
         }}
         
         /* AI status indicators */
@@ -160,6 +161,128 @@ def load_css():
             padding: 0.5rem;
             border-radius: 0.25rem;
             margin: 0.5rem 0;
+        }}
+        
+        /* Chart container improvements */
+        .js-plotly-plot {{
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }}
+        
+        /* Metric improvements */
+        .metric-container {{
+            background: linear-gradient(145deg, {COLORS['neutral_white']}, #f5f5f5);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid {COLORS['primary_blue']};
+            transition: transform 0.2s ease;
+        }}
+        
+        .metric-container:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }}
+        
+        /* Button styling improvements */
+        .stButton > button {{
+            border-radius: 0.5rem;
+            border: none;
+            background: linear-gradient(145deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        .stButton > button:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }}
+        
+        /* Section headers */
+        .section-header {{
+            background: linear-gradient(90deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem 0;
+        }}
+        
+        /* Sidebar improvements */
+        .css-1d391kg {{
+            background: linear-gradient(180deg, {COLORS['neutral_white']}, #f8f9fa);
+        }}
+        
+        /* Selectbox improvements */
+        .stSelectbox > div > div {{
+            border-radius: 0.5rem;
+            border: 2px solid {COLORS['neutral_light_gray']};
+            transition: border-color 0.3s ease;
+        }}
+        
+        .stSelectbox > div > div:focus-within {{
+            border-color: {COLORS['primary_blue']};
+            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.1);
+        }}
+        
+        /* Text input improvements */
+        .stTextInput > div > div > input {{
+            border-radius: 0.5rem;
+            border: 2px solid {COLORS['neutral_light_gray']};
+            transition: all 0.3s ease;
+        }}
+        
+        .stTextInput > div > div > input:focus {{
+            border-color: {COLORS['primary_blue']};
+            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.1);
+        }}
+        
+        /* Slider improvements */
+        .stSlider > div > div > div > div {{
+            background-color: {COLORS['primary_blue']};
+        }}
+        
+        /* Multiselect improvements */
+        .stMultiSelect > div > div {{
+            border-radius: 0.5rem;
+            border: 2px solid {COLORS['neutral_light_gray']};
+        }}
+        
+        /* Loading spinner customization */
+        .stSpinner > div {{
+            border-top-color: {COLORS['primary_blue']} !important;
+        }}
+        
+        /* Success/error message improvements */
+        .stSuccess {{
+            background-color: {COLORS['accent_green']};
+            color: white;
+            border-radius: 0.5rem;
+            border: none;
+        }}
+        
+        .stError {{
+            background-color: {COLORS['accent_coral']};
+            color: white;
+            border-radius: 0.5rem;
+            border: none;
+        }}
+        
+        .stInfo {{
+            background-color: {COLORS['primary_blue']};
+            color: white;
+            border-radius: 0.5rem;
+            border: none;
+        }}
+        
+        .stWarning {{
+            background-color: #f39c12;
+            color: white;
+            border-radius: 0.5rem;
+            border: none;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -564,14 +687,25 @@ def create_risk_distribution_chart(df):
     fig.update_layout(
         showlegend=False,
         height=400,
-        title_font_size=18,
-        title_x=0.5,
-        title_font_family="Segoe UI",
-        title_font_color=COLORS['neutral_charcoal'],
+        title={
+            'text': "Risk Level Distribution",
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 18, 'family': "Segoe UI", 'color': COLORS['neutral_charcoal']}
+        },
         plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)'
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis={
+            'title': {'text': 'Risk Level', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
+            'tickangle': 45,
+            'tickfont': {'size': 12, 'color': COLORS['neutral_charcoal']}
+        },
+        yaxis={
+            'title': {'text': 'Number of Veterans', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
+            'tickfont': {'size': 12, 'color': COLORS['neutral_charcoal']}
+        },
+        margin=dict(t=60, b=80, l=60, r=20)
     )
-    fig.update_xaxes(tickangle=45)
     return fig
 
 def create_intake_timeline(df):
@@ -586,35 +720,73 @@ def create_intake_timeline(df):
         title='Daily Intake Volume (Last 30 Days)',
         markers=True
     )
-    fig.update_traces(line_color=COLORS['primary_teal'], marker_color=COLORS['primary_teal'])
+    fig.update_traces(
+        line_color=COLORS['primary_teal'], 
+        marker_color=COLORS['primary_teal'],
+        line_width=3,
+        marker_size=8
+    )
     fig.update_layout(
         height=400,
-        title_font_size=18,
-        title_x=0.5,
-        title_font_family="Segoe UI",
-        title_font_color=COLORS['neutral_charcoal'],
+        title={
+            'text': "Daily Intake Volume (Last 30 Days)",
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 18, 'family': "Segoe UI", 'color': COLORS['neutral_charcoal']}
+        },
         plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)'
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis={
+            'title': {'text': 'Date', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
+            'tickfont': {'size': 12, 'color': COLORS['neutral_charcoal']}
+        },
+        yaxis={
+            'title': {'text': 'Count', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
+            'tickfont': {'size': 12, 'color': COLORS['neutral_charcoal']}
+        },
+        margin=dict(t=60, b=60, l=60, r=20)
     )
     return fig
 
 def create_clinician_workload_chart(df):
     workload = df['Assigned Clinician'].value_counts()
     
+    # Use consistent color palette
+    colors = [COLORS['primary_blue'], COLORS['primary_teal'], COLORS['accent_coral'], 
+              COLORS['accent_green'], COLORS['secondary_sandstone'], COLORS['neutral_medium_gray']]
+    
     fig = px.pie(
         values=workload.values,
         names=workload.index,
         title="Clinician Workload Distribution",
-        color_discrete_sequence=['#5B9BD3', '#3E8A7E', '#FF7F50', '#77DD77', '#D8C9B8', '#757575']
+        color_discrete_sequence=colors
     )
     fig.update_layout(
         height=400,
-        title_font_size=18,
-        title_x=0.5,
-        title_font_family="Segoe UI",
-        title_font_color=COLORS['neutral_charcoal'],
+        title={
+            'text': "Clinician Workload Distribution",
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 18, 'family': "Segoe UI", 'color': COLORS['neutral_charcoal']}
+        },
         plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)'
+        paper_bgcolor='rgba(0,0,0,0)',
+        font={'size': 12, 'color': COLORS['neutral_charcoal']},
+        legend={
+            'orientation': 'v',
+            'yanchor': 'middle',
+            'y': 0.5,
+            'xanchor': 'left',
+            'x': 1.05,
+            'font': {'size': 11}
+        },
+        margin=dict(t=60, b=20, l=20, r=120)
+    )
+    fig.update_traces(
+        textposition='inside',
+        textinfo='percent+label',
+        textfont_size=11,
+        marker_line=dict(color='white', width=2)
     )
     return fig
 
@@ -839,94 +1011,198 @@ def main():
     # --- Analytics Overview ---
     st.header("📊 Analytics Overview")
     
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Create chart containers with improved styling
+    col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     
     with col1:
-        with st.container():
-            if not df_filtered.empty:
-                fig1 = create_risk_distribution_chart(df_filtered)
-                st.plotly_chart(fig1, use_container_width=True)
-            else:
-                st.info("No data available for risk distribution chart.")
+        st.markdown("""
+        <div style="background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+        """, unsafe_allow_html=True)
+        if not df_filtered.empty:
+            fig1 = create_risk_distribution_chart(df_filtered)
+            st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False})
+        else:
+            st.info("No data available for risk distribution chart.")
+        st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
-        with st.container():
-            if not df_filtered.empty:
-                fig2 = create_intake_timeline(df_filtered)
-                st.plotly_chart(fig2, use_container_width=True)
-            else:
-                st.info("No data available for intake timeline.")
+        st.markdown("""
+        <div style="background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+        """, unsafe_allow_html=True)
+        if not df_filtered.empty:
+            fig2 = create_intake_timeline(df_filtered)
+            st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
+        else:
+            st.info("No data available for intake timeline.")
+        st.markdown("</div>", unsafe_allow_html=True)
     
     with col3:
-        with st.container():
-            if not df_filtered.empty:
-                fig3 = create_clinician_workload_chart(df_filtered)
-                st.plotly_chart(fig3, use_container_width=True)
-            else:
-                st.info("No data available for clinician workload.")
+        st.markdown("""
+        <div style="background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+        """, unsafe_allow_html=True)
+        if not df_filtered.empty:
+            fig3 = create_clinician_workload_chart(df_filtered)
+            st.plotly_chart(fig3, use_container_width=True, config={'displayModeBar': False})
+        else:
+            st.info("No data available for clinician workload.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # --- Key Metrics Dashboard ---
     st.header("📈 Key Performance Indicators")
     
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    # Create enhanced metrics with better styling
+    col1, col2, col3, col4, col5, col6 = st.columns(6, gap="small")
     
-    with col1:
-        critical_count = len(df_filtered[df_filtered['Risk Level'].str.contains('Critical', na=False)])
-        st.metric("🚨 Critical Risk", critical_count, 
-                 help="Veterans requiring immediate intervention")
+    metrics_data = [
+        {
+            "col": col1,
+            "label": "🚨 Critical Risk",
+            "value": len(df_filtered[df_filtered['Risk Level'].str.contains('Critical', na=False)]),
+            "help": "Veterans requiring immediate intervention",
+            "color": COLORS['accent_coral']
+        },
+        {
+            "col": col2,
+            "label": "⚠️ High Risk",
+            "value": len(df_filtered[df_filtered['Risk Level'].str.contains('High', na=False)]),
+            "help": "Veterans requiring urgent attention",
+            "color": COLORS['secondary_sandstone']
+        },
+        {
+            "col": col3,
+            "label": "🔶 Medium Risk",
+            "value": len(df_filtered[df_filtered['Risk Level'] == 'Medium']),
+            "help": "Veterans requiring regular monitoring",
+            "color": COLORS['primary_blue']
+        },
+        {
+            "col": col4,
+            "label": "🟢 Low Risk",
+            "value": len(df_filtered[df_filtered['Risk Level'] == 'Low']),
+            "help": "Veterans with minimal risk factors",
+            "color": COLORS['accent_green']
+        },
+        {
+            "col": col5,
+            "label": "👥 Unassigned",
+            "value": len(df_filtered[df_filtered['Assigned Clinician'] == 'Unassigned']),
+            "help": "Veterans awaiting clinician assignment",
+            "color": COLORS['neutral_medium_gray']
+        },
+        {
+            "col": col6,
+            "label": "👤 Avg Age",
+            "value": f"{df_filtered['Age'].mean():.1f}" if not df_filtered.empty else "0.0",
+            "help": "Average age of veterans in current view",
+            "color": COLORS['primary_teal']
+        }
+    ]
     
-    with col2:
-        high_count = len(df_filtered[df_filtered['Risk Level'].str.contains('High', na=False)])
-        st.metric("⚠️ High Risk", high_count,
-                 help="Veterans requiring urgent attention")
-    
-    with col3:
-        medium_count = len(df_filtered[df_filtered['Risk Level'] == 'Medium'])
-        st.metric("🔶 Medium Risk", medium_count,
-                 help="Veterans requiring regular monitoring")
-    
-    with col4:
-        low_count = len(df_filtered[df_filtered['Risk Level'] == 'Low'])
-        st.metric("🟢 Low Risk", low_count,
-                 help="Veterans with minimal risk factors")
-    
-    with col5:
-        unassigned_count = len(df_filtered[df_filtered['Assigned Clinician'] == 'Unassigned'])
-        st.metric("👥 Unassigned", unassigned_count,
-                 help="Veterans awaiting clinician assignment")
-    
-    with col6:
-        avg_age = df_filtered['Age'].mean() if not df_filtered.empty else 0
-        st.metric("👤 Avg Age", f"{avg_age:.1f}",
-                 help="Average age of veterans in current view")
+    for metric in metrics_data:
+        with metric["col"]:
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(145deg, white, #f8f9fa);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid {metric['color']};
+                transition: transform 0.2s ease;
+                height: 100px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            ">
+                <div style="font-size: 0.8rem; color: {COLORS['neutral_medium_gray']}; margin-bottom: 0.25rem;">
+                    {metric['label']}
+                </div>
+                <div style="font-size: 1.8rem; font-weight: bold; color: {metric['color']};">
+                    {metric['value']}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     # Additional clinical metrics
     if not df_filtered.empty:
         st.subheader("🔍 Clinical Insights")
-        col1, col2, col3, col4 = st.columns(4)
         
-        with col1:
-            homeless_count = len(df_filtered[df_filtered['Housing Status'] == 'Homeless'])
-            homeless_pct = (homeless_count / len(df_filtered)) * 100
-            st.metric("🏠 Housing Instability", f"{homeless_count} ({homeless_pct:.1f}%)",
-                     help="Veterans experiencing homelessness")
+        # Create enhanced insight metrics
+        col1, col2, col3, col4 = st.columns(4, gap="medium")
         
-        with col2:
-            high_substance = len(df_filtered[df_filtered['Substance Use Risk'] == 'High'])
-            substance_pct = (high_substance / len(df_filtered)) * 100
-            st.metric("🍺 Substance Risk", f"{high_substance} ({substance_pct:.1f}%)",
-                     help="Veterans with high substance use risk")
+        insights_data = [
+            {
+                "col": col1,
+                "icon": "🏠",
+                "title": "Housing Instability",
+                "count": len(df_filtered[df_filtered['Housing Status'] == 'Homeless']),
+                "total": len(df_filtered),
+                "help": "Veterans experiencing homelessness",
+                "color": COLORS['accent_coral']
+            },
+            {
+                "col": col2,
+                "icon": "🍺",
+                "title": "Substance Risk",
+                "count": len(df_filtered[df_filtered['Substance Use Risk'] == 'High']),
+                "total": len(df_filtered),
+                "help": "Veterans with high substance use risk",
+                "color": COLORS['secondary_sandstone']
+            },
+            {
+                "col": col3,
+                "icon": "👥",
+                "title": "Social Isolation",
+                "count": len(df_filtered[df_filtered['Social Support'] == 'Low']),
+                "total": len(df_filtered),
+                "help": "Veterans with limited social support",
+                "color": COLORS['primary_blue']
+            },
+            {
+                "col": col4,
+                "icon": "📊",
+                "title": "Avg PHQ-9",
+                "count": f"{df_filtered['PHQ-9 Score'].mean():.1f}",
+                "total": "27",
+                "help": "Average depression severity score",
+                "color": COLORS['primary_teal'],
+                "is_score": True
+            }
+        ]
         
-        with col3:
-            low_support = len(df_filtered[df_filtered['Social Support'] == 'Low'])
-            support_pct = (low_support / len(df_filtered)) * 100
-            st.metric("👥 Social Isolation", f"{low_support} ({support_pct:.1f}%)",
-                     help="Veterans with limited social support")
-        
-        with col4:
-            avg_phq9 = df_filtered['PHQ-9 Score'].mean()
-            st.metric("📊 Avg PHQ-9", f"{avg_phq9:.1f}",
-                     help="Average depression severity score")
+        for insight in insights_data:
+            with insight["col"]:
+                if insight.get("is_score"):
+                    display_text = f"{insight['count']}/{insight['total']}"
+                    percentage = ""
+                else:
+                    percentage = f" ({(insight['count'] / insight['total'] * 100):.1f}%)"
+                    display_text = f"{insight['count']}{percentage}"
+                
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(145deg, white, #f8f9fa);
+                    border-radius: 0.75rem;
+                    padding: 1.2rem;
+                    text-align: center;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    border-top: 4px solid {insight['color']};
+                    height: 120px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                ">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">
+                        {insight['icon']}
+                    </div>
+                    <div style="font-size: 0.85rem; color: {COLORS['neutral_medium_gray']}; margin-bottom: 0.25rem; font-weight: 600;">
+                        {insight['title']}
+                    </div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: {insight['color']};">
+                        {display_text}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # --- Triage Queue ---
     st.header(f"🎯 Triage Queue ({len(df_filtered)} Veterans)")

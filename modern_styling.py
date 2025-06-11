@@ -402,7 +402,7 @@ def load_modern_css():
             box-shadow: var(--shadow-sm) !important;
         }
         
-        /* AI Summary Box Styling - Improved Light Design */
+        /* AI Summary Box Styling - Improved Light Design WITHOUT WHITE HEADING */
         .ai-summary-box {
             background: linear-gradient(135deg, rgba(91, 155, 211, 0.08), rgba(62, 138, 126, 0.08)) !important;
             border: 2px solid var(--primary) !important;
@@ -433,11 +433,171 @@ def load_modern_css():
             display: flex !important;
             align-items: center !important;
             gap: 0.5rem !important;
+            background: transparent !important;
         }
         
         .ai-summary-box p {
             color: var(--text) !important;
             line-height: 1.6 !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+            background: transparent !important;
+        }
+        
+        /* Individual AI Assessment Box - Different Style WITHOUT WHITE HEADING */
+        .individual-ai-box {
+            background: linear-gradient(135deg, rgba(62, 138, 126, 0.08), rgba(119, 221, 119, 0.08)) !important;
+            border: 2px solid var(--secondary) !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            margin: 1rem 0 !important;
+            box-shadow: 0 4px 12px rgba(62, 138, 126, 0.15) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .individual-ai-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary), var(--success));
+        }
+        
+        .individual-ai-box h4 {
+            color: var(--secondary) !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            background: transparent !important;
+        }
+        
+        .individual-ai-box p {
+            color: var(--text) !important;
+            line-height: 1.6 !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+            background: transparent !important;
+        }
+        
+        /* Button Response Box */
+        .button-response {
+            background: linear-gradient(135deg, rgba(119, 221, 119, 0.1), rgba(62, 138, 126, 0.1)) !important;
+            border: 1px solid var(--success) !important;
+            border-radius: 8px !important;
+            padding: 1rem !important;
+            margin: 0.5rem 0 !important;
+            color: var(--text) !important;
+            font-weight: 500 !important;
+            box-shadow: 0 2px 4px rgba(119, 221, 119, 0.1) !important;
+        }
+        
+        /* Q&A Container Styling */
+        .qa-container {
+            background: rgba(247, 250, 252, 0.8) !important;
+            border: 1px solid rgba(91, 155, 211, 0.2) !important;
+            border-radius: 8px !important;
+            padding: 1rem !important;
+            margin: 0.5rem 0 !important;
+        }
+        
+        .qa-question {
+            color: var(--primary) !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .qa-answer {
+            color: var(--text) !important;
+            line-height: 1.5 !important;
+            padding: 0.5rem !important;
+            background: rgba(255, 255, 255, 0.7) !important;
+            border-radius: 4px !important;
+            border-left: 3px solid var(--primary) !important;
+        }
+        
+        /* Improved responsive layout for mobile */
+        @media (max-width: 768px) {
+            .main .block-container {
+                padding: var(--spacing-sm) !important;
+            }
+            
+            /* Mobile column stacking */
+            .row-widget.stHorizontal > div {
+                flex-direction: column !important;
+                width: 100% !important;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            /* Mobile metrics layout */
+            .stMetric {
+                margin-bottom: 1rem !important;
+                min-width: 140px !important;
+            }
+            
+            /* Mobile button adjustments */
+            .stButton > button {
+                font-size: 0.75rem !important;
+                padding: 0.4rem 0.8rem !important;
+                min-height: 2.5rem !important;
+            }
+            
+            /* Mobile AI boxes */
+            .ai-summary-box, .individual-ai-box {
+                padding: 1rem !important;
+                margin: 0.5rem 0 !important;
+            }
+            
+            .ai-summary-box h4, .individual-ai-box h4 {
+                font-size: 1rem !important;
+            }
+            
+            .ai-summary-box p, .individual-ai-box p {
+                font-size: 0.9rem !important;
+            }
+        }
+        
+        /* Improved tablet layout */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .main .block-container {
+                padding: var(--spacing-md) var(--spacing-lg) !important;
+            }
+            
+            .stMetric {
+                min-width: 160px !important;
+            }
+        }
+        
+        /* Desktop optimizations */
+        @media (min-width: 1025px) {
+            .main .block-container {
+                padding: var(--spacing-xl) var(--spacing-xl) !important;
+            }
+        }
+        
+        /* Ensure containers work properly on all screen sizes */
+        .stContainer > div {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        /* Fix for column overflow issues */
+        [data-testid="column"] {
+            min-width: 0 !important;
+            flex: 1 !important;
+        }
+        
+        /* Prevent text overflow in metrics */
+        .metric-container .metric-value {
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }-height: 1.6 !important;
             margin-bottom: 0 !important;
             font-size: 0.95rem !important;
         }

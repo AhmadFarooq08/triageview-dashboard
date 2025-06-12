@@ -21,13 +21,13 @@ st.set_page_config(
 
 # --- VETERAN-FOCUSED COLOR PALETTE ---
 COLORS = {
-    "primary_blue": "#5B9BD3",      # Serene Sky Blue
-    "primary_teal": "#3E8A7E",      # Hopeful Teal Green
+    "primary_blue": "#5B9BD3",
+    "primary_teal": "#3E8A7E",
     "secondary_light_sky": "#A8D8F0",
     "secondary_deep_teal": "#2C6B5F",
     "secondary_sandstone": "#D8C9B8",
-    "accent_coral": "#FF7F50",      # Vitality Coral
-    "accent_green": "#77DD77",      # Growth Sprout Green
+    "accent_coral": "#FF7F50",
+    "accent_green": "#77DD77",
     "neutral_white": "#FFFFFF",
     "neutral_off_white": "#F8F8F8",
     "neutral_light_gray": "#E0E0E0",
@@ -56,21 +56,21 @@ def initialize_session_state():
         st.session_state.calendar_view = datetime.now()
     if 'appointments' not in st.session_state:
         st.session_state.appointments = generate_sample_appointments()
+    if 'selected_calendar_day' not in st.session_state:
+        st.session_state.selected_calendar_day = None
 
 def generate_sample_appointments():
     """Generate sample appointments for the calendar"""
     appointments = []
     today = datetime.now()
     
-    # Generate appointments for next 30 days
     for i in range(30):
         date = today + timedelta(days=i)
-        # Random number of appointments per day (0-8)
         num_appointments = random.randint(0, 8)
         
         for j in range(num_appointments):
-            hour = random.randint(8, 16)  # 8 AM to 4 PM
-            minute = random.choice([0, 30])  # 30-minute slots
+            hour = random.randint(8, 16)
+            minute = random.choice([0, 30])
             
             appointment_time = date.replace(hour=hour, minute=minute, second=0, microsecond=0)
             
@@ -92,10 +92,8 @@ def generate_sample_appointments():
 def load_enhanced_css():
     st.markdown(f"""
     <style>
-        /* Import modern font */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        /* Global styling */
         .stApp {{
             background-color: {COLORS['neutral_off_white']};
             color: {COLORS['neutral_charcoal']};
@@ -114,14 +112,12 @@ def load_enhanced_css():
             overflow-y: auto !important;
         }}
         
-        /* Main content area adjustments */
         .main .block-container {{
             padding: 2rem 2rem 2rem 2rem !important;
             margin-left: 0 !important;
             max-width: none !important;
         }}
         
-        /* Adjust main content when sidebar is open */
         section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {{
             margin-left: 21rem !important;
             transition: margin-left 0.3s ease !important;
@@ -132,7 +128,6 @@ def load_enhanced_css():
             transition: margin-left 0.3s ease !important;
         }}
         
-        /* Responsive adjustments */
         @media (max-width: 768px) {{
             section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {{
                 margin-left: 0 !important;
@@ -147,7 +142,7 @@ def load_enhanced_css():
             }}
         }}
         
-        /* Enhanced AI summary boxes - NO WHITE BACKGROUND */
+        /* Enhanced AI summary boxes */
         .ai-summary-all-patients {{
             background: linear-gradient(135deg, rgba(91, 155, 211, 0.15), rgba(62, 138, 126, 0.15)) !important;
             border: 2px solid {COLORS['primary_blue']} !important;
@@ -256,25 +251,6 @@ def load_enhanced_css():
             background: linear-gradient(135deg, {COLORS['secondary_deep_teal']}, {COLORS['primary_blue']}) !important;
         }}
         
-        /* Specific button variants */
-        .stButton[data-testid*="crisis"] > button,
-        .emergency-button {{
-            background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
-        }}
-        
-        .stButton[data-testid*="urgent"] > button,
-        .urgent-button {{
-            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
-        }}
-        
-        .stButton[data-testid*="routine"] > button,
-        .routine-button {{
-            background: linear-gradient(135deg, {COLORS['accent_green']}, #6bc373) !important;
-            box-shadow: 0 4px 12px rgba(119, 221, 119, 0.3) !important;
-        }}
-        
         /* Calendar styling */
         .calendar-container {{
             background: {COLORS['neutral_white']};
@@ -289,19 +265,29 @@ def load_enhanced_css():
             border: 1px solid {COLORS['neutral_light_gray']};
             border-radius: 8px;
             padding: 0.5rem;
-            margin: 2px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
             min-height: 80px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            align-items: center;
         }}
         
         .calendar-day:hover {{
             background-color: {COLORS['secondary_light_sky']};
             transform: scale(1.02);
+        }}
+        
+        .calendar-day-empty {{
+            border: none;
+            cursor: default;
+        }}
+        
+        .calendar-day-empty:hover {{
+            background: transparent;
+            transform: none;
         }}
         
         .appointment-available {{
@@ -317,6 +303,15 @@ def load_enhanced_css():
         .appointment-cancelled {{
             background-color: rgba(255, 127, 80, 0.3);
             border-color: {COLORS['accent_coral']};
+        }}
+        
+        .appointment-details {{
+            background: {COLORS['neutral_white']};
+            border: 1px solid {COLORS['neutral_light_gray']};
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }}
         
         /* Priority alert enhancements */
@@ -342,7 +337,7 @@ def load_enhanced_css():
             }}
         }}
         
-        /* Enhanced metrics */
+        /* Enhanced metrics - remove arrows */
         .stMetric {{
             background: {COLORS['neutral_white']} !important;
             border: 1px solid {COLORS['neutral_light_gray']} !important;
@@ -356,6 +351,11 @@ def load_enhanced_css():
         .stMetric:hover {{
             transform: translateY(-2px) !important;
             box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+        }}
+        
+        /* Hide metric delta arrows */
+        .stMetric [data-testid="metric-delta"] {{
+            display: none !important;
         }}
         
         /* Category styling */
@@ -389,22 +389,6 @@ def load_enhanced_css():
         .stMultiSelect > div > div:focus-within {{
             border-color: {COLORS['primary_blue']} !important;
             box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.1) !important;
-        }}
-        
-        /* Treatment preference indicators */
-        .treatment-therapy {{
-            background: linear-gradient(135deg, rgba(62, 138, 126, 0.1), rgba(44, 107, 95, 0.05));
-            border-left: 4px solid {COLORS['primary_teal']};
-        }}
-        
-        .treatment-medication {{
-            background: linear-gradient(135deg, rgba(91, 155, 211, 0.1), rgba(59, 130, 246, 0.05));
-            border-left: 4px solid {COLORS['primary_blue']};
-        }}
-        
-        .treatment-both {{
-            background: linear-gradient(135deg, rgba(255, 127, 80, 0.1), rgba(229, 90, 58, 0.05));
-            border-left: 4px solid {COLORS['accent_coral']};
         }}
         
         /* Hide unwanted elements */
@@ -514,83 +498,96 @@ def call_gemini_api(prompt, model="gemini-1.5-flash"):
         return f"Unexpected error: {str(e)}"
 
 def generate_ai_summary(data, summary_type="all_patients"):
-    """Generate AI summary using Gemini API"""
+    """Generate AI summary using enhanced prompts"""
     try:
         if summary_type == "all_patients":
             emergent_cases = len(data[data['VA Category'] == 'Emergent'])
             urgent_cases = len(data[data['VA Category'] == 'Urgent'])
             routine_cases = len(data[data['VA Category'] == 'Routine'])
-            avg_phq9 = data['PHQ-9 Score'].mean()
-            avg_gad7 = data['GAD-7 Score'].mean()
             
             prompt = f"""
-As a clinical psychologist specializing in veteran mental health, provide a professional clinical summary based on this veteran patient data:
+You are a senior clinical psychologist and veteran mental health specialist with 20+ years of experience in VA clinical settings. Analyze this veteran patient population data and provide actionable clinical insights.
 
-PATIENT STATISTICS:
-- Total Veterans: {len(data)}
-- Emergent Cases (Imminent Risk): {emergent_cases}
-- Urgent Cases (Same Day Eval): {urgent_cases}
-- Routine Referrals: {routine_cases}
-- Average Age: {data['Age'].mean():.1f} years
-- Homeless Veterans: {len(data[data['Housing Status'] == 'Homeless'])}
-- Veterans with Low Social Support: {len(data[data['Social Support'] == 'Low'])}
-- High Substance Use Risk: {len(data[data['Substance Use Risk'] == 'High'])}
+VETERAN POPULATION METRICS:
+• Total Veterans in Current Caseload: {len(data)}
+• EMERGENT Cases (Imminent Suicide Risk): {emergent_cases} veterans
+• URGENT Cases (Same-Day Evaluation Needed): {urgent_cases} veterans  
+• ROUTINE Cases (Timely Follow-up): {routine_cases} veterans
 
-CLINICAL METRICS:
-- Average PHQ-9 Score: {avg_phq9:.1f} (Depression)
-- Average GAD-7 Score: {avg_gad7:.1f} (Anxiety)
-- Average PCL-5 Score: {data['PCL-5 Score'].mean():.1f} (PTSD)
+CLINICAL SEVERITY INDICATORS:
+• Average Depression Severity (PHQ-9): {data['PHQ-9 Score'].mean():.1f}/27
+• Average Anxiety Severity (GAD-7): {data['GAD-7 Score'].mean():.1f}/21
+• Average PTSD Severity (PCL-5): {data['PCL-5 Score'].mean():.1f}/80
+• Veterans with Active Suicidal Ideation: {len(data[data['PHQ-9 Q9 (Self-Harm)'] == 'Yes'])}
 
-TREATMENT PREFERENCES:
-- Therapy Only: {len(data[data['Treatment Preference'] == 'Therapy'])}
-- Medication Only: {len(data[data['Treatment Preference'] == 'Medication'])}
-- Both Therapy & Medication: {len(data[data['Treatment Preference'] == 'Both'])}
+PSYCHOSOCIAL RISK FACTORS:
+• Housing Instability: {len(data[data['Housing Status'].isin(['At Risk', 'Homeless'])])} veterans ({(len(data[data['Housing Status'].isin(['At Risk', 'Homeless'])]) / len(data) * 100):.1f}%)
+• Social Isolation (Low Support): {len(data[data['Social Support'] == 'Low'])} veterans ({(len(data[data['Social Support'] == 'Low']) / len(data) * 100):.1f}%)
+• High Substance Use Risk: {len(data[data['Substance Use Risk'] == 'High'])} veterans ({(len(data[data['Substance Use Risk'] == 'High']) / len(data) * 100):.1f}%)
 
-Please provide:
-1. Key clinical insights (2-3 sentences)
-2. Primary areas of concern (1-2 sentences)
-3. Recommended priority actions (1-2 sentences)
+TREATMENT READINESS:
+• Therapy-Focused Treatment: {len(data[data['Treatment Preference'] == 'Therapy'])} veterans
+• Medication-Focused Treatment: {len(data[data['Treatment Preference'] == 'Medication'])} veterans
+• Integrated Treatment (Both): {len(data[data['Treatment Preference'] == 'Both'])} veterans
 
-Keep response professional and concise (under 200 words).
+CLINICAL PRIORITIES TO ADDRESS:
+1. **Immediate Crisis Intervention**: Focus on {emergent_cases + urgent_cases} high-acuity cases requiring same-day response
+2. **Risk Stratification**: Prioritize resource allocation based on VA triage categories
+3. **Treatment Matching**: Align interventions with veteran preferences and clinical needs
+
+Provide a concise clinical summary (150-200 words) that includes:
+- Key population health trends
+- Primary clinical concerns requiring immediate attention  
+- Evidence-based recommendations for care coordination
+- Specific actions for improving outcomes
+
+Write in professional clinical language suitable for interdisciplinary team meetings.
             """
         
         elif summary_type == "individual_patient":
             veteran = data.iloc[0]
+            
             prompt = f"""
-As a clinical psychologist, provide a comprehensive assessment for this veteran:
+You are a licensed clinical psychologist conducting a comprehensive assessment for a veteran patient. Provide a thorough clinical formulation and treatment recommendations.
 
-VETERAN PROFILE:
-- ID: {veteran['Veteran ID']}
-- Name: {veteran.get('Name', 'Not provided')}
-- Age: {veteran['Age']}, Gender: {veteran['Gender']}
-- Military Branch: {veteran['Branch']}, Service Era: {veteran['Service Era']}
+VETERAN CLINICAL PROFILE:
+• Patient: {veteran.get('Name', 'Veteran')} ({veteran['Veteran ID']})
+• Demographics: {veteran['Age']}-year-old {veteran['Gender']}, {veteran['Branch']} veteran from {veteran['Service Era']} era
+• Current Triage Status: {veteran['VA Category']} (Risk Score: {veteran['Risk Score']}/6)
 
-RISK ASSESSMENT:
-- VA Category: {veteran['VA Category']}
-- Risk Level: {veteran['Risk Level']} (Score: {veteran['Risk Score']})
-- C-SSRS Screen: {veteran['C-SSRS Screen']}
-- PHQ-9 Q9 Self-Harm: {veteran['PHQ-9 Q9 (Self-Harm)']}
+SUICIDE RISK ASSESSMENT:
+• C-SSRS Screening Result: {veteran['C-SSRS Screen']}
+• PHQ-9 Item 9 (Suicidal Ideation): {veteran['PHQ-9 Q9 (Self-Harm)']}
+• Clinical Risk Explanation: {veteran['Risk Explanation']}
 
-CLINICAL SCORES:
-- PHQ-9 (Depression): {veteran['PHQ-9 Score']}/27
-- GAD-7 (Anxiety): {veteran['GAD-7 Score']}/21
-- PCL-5 (PTSD): {veteran['PCL-5 Score']}/80
+STANDARDIZED ASSESSMENT SCORES:
+• PHQ-9 Depression Scale: {veteran['PHQ-9 Score']}/27 (Clinical Range: {'Severe' if veteran['PHQ-9 Score'] >= 20 else 'Moderate-Severe' if veteran['PHQ-9 Score'] >= 15 else 'Moderate' if veteran['PHQ-9 Score'] >= 10 else 'Mild' if veteran['PHQ-9 Score'] >= 5 else 'Minimal'})
+• GAD-7 Anxiety Scale: {veteran['GAD-7 Score']}/21 (Clinical Range: {'Severe' if veteran['GAD-7 Score'] >= 15 else 'Moderate' if veteran['GAD-7 Score'] >= 10 else 'Mild' if veteran['GAD-7 Score'] >= 5 else 'Minimal'})
+• PCL-5 PTSD Scale: {veteran['PCL-5 Score']}/80 (Clinical Significance: {'Likely PTSD' if veteran['PCL-5 Score'] >= 50 else 'Probable PTSD' if veteran['PCL-5 Score'] >= 32 else 'Subclinical'})
 
-SOCIAL DETERMINANTS:
-- Housing Status: {veteran['Housing Status']}
-- Social Support: {veteran['Social Support']}
-- Substance Use Risk: {veteran['Substance Use Risk']}
-- Treatment Preference: {veteran['Treatment Preference']}
-- Emergency Contact: {veteran['Emergency Contact']}
-- Transportation: {veteran['Transportation']}
+PSYCHOSOCIAL DETERMINANTS:
+• Housing Stability: {veteran['Housing Status']}
+• Social Support Network: {veteran['Social Support']}
+• Substance Use Risk Level: {veteran['Substance Use Risk']}
+• Emergency Contact Availability: {veteran['Emergency Contact']}
+• Transportation Access: {veteran['Transportation']}
+• Mental Health Treatment History: {veteran['Previous Mental Health Treatment']}
 
-Please provide:
-1. Clinical risk assessment summary
-2. Key psychosocial factors
-3. Recommended interventions
-4. Follow-up priorities
+TREATMENT PREFERENCES & READINESS:
+• Preferred Treatment Modality: {veteran['Treatment Preference']}
+• Current Clinical Assignment: {veteran['Assigned Clinician']}
+• Last Clinical Contact: {veteran['Last Contact']}
 
-Keep response professional and actionable (under 300 words).
+Provide a comprehensive clinical assessment (250-300 words) including:
+
+1. **Clinical Formulation**: Integrate presenting concerns with risk factors and strengths
+2. **Differential Considerations**: Primary diagnoses to consider based on symptom profile
+3. **Evidence-Based Treatment Recommendations**: Specific interventions aligned with veteran preferences
+4. **Safety Planning**: Immediate risk mitigation strategies if applicable
+5. **Care Coordination**: Recommended frequency and modality of follow-up
+6. **Prognostic Factors**: Protective and risk factors influencing treatment outcomes
+
+Write in professional clinical language suitable for treatment planning and case consultation.
             """
         
         return call_gemini_api(prompt, "gemini-1.5-flash")
@@ -599,22 +596,24 @@ Keep response professional and actionable (under 300 words).
         return f"Error generating AI summary: {str(e)}"
 
 def ask_ai_question(question, data_context):
-    """Ask AI questions about the veteran patient data"""
+    """Enhanced AI questioning with better prompts"""
     try:
         prompt = f"""
-As a clinical expert in veteran mental health, answer this question based on the provided veteran patient data:
+You are a senior clinical consultant and veteran mental health expert providing guidance to clinical staff. A colleague has asked you the following question about the current patient population.
 
-QUESTION: {question}
+CLINICAL QUESTION: {question}
 
-DATA CONTEXT: {data_context}
+CURRENT PATIENT POPULATION DATA:
+{data_context}
 
 Please provide a professional, evidence-based response that:
-1. Directly addresses the question
-2. References relevant clinical data when appropriate
-3. Includes actionable insights for clinical staff
-4. Maintains professional medical terminology
+1. Directly addresses the clinical question with specific recommendations
+2. References relevant patient data and clinical indicators where appropriate
+3. Includes actionable next steps for clinical staff
+4. Cites evidence-based practices when applicable
+5. Considers VA-specific guidelines and best practices for veteran care
 
-Keep response concise and practical (under 200 words).
+Respond in clear, professional language appropriate for clinical decision-making. Keep response focused and practical (150-200 words).
         """
         
         return call_gemini_api(prompt, "gemini-1.5-flash")
@@ -643,7 +642,6 @@ def generate_synthetic_data(num_records=100):
         c_ssrs_status = random.choices(c_ssrs_options, weights=[0.78, 0.14, 0.06, 0.02], k=1)[0]
         phq9_q9_suicide = "No"
         
-        # Create correlated scores based on C-SSRS status
         if c_ssrs_status == 'Positive - Recent Behavior':
             phq9_score = random.randint(18, 27)
             gad7_score = random.randint(14, 21)
@@ -734,30 +732,25 @@ def calculate_detailed_risk_score(row):
     score = 0
     explanation = []
 
-    # Priority 1: C-SSRS Screening
     if row["C-SSRS Screen"] == 'Positive - Recent Behavior':
         return 6, "Critical - Behavior", "C-SSRS Positive: Recent suicidal behavior reported. REQUIRES IMMEDIATE INTERVENTION."
     if row["C-SSRS Screen"] == 'Positive - Active Ideation':
         return 5, "Critical - Ideation", "C-SSRS Positive: Active suicidal ideation with plan/intent. Requires urgent evaluation."
     
-    # Priority 2: PHQ-9 Question 9
     if row["PHQ-9 Q9 (Self-Harm)"] == "Yes":
         score = 4
         explanation.append("PHQ-9 Q9 Positive (Self-Harm)")
     
-    # Priority 3: High Symptom Scores
     if row["PHQ-9 Score"] >= 20 or row["GAD-7 Score"] >= 15 or row["PCL-5 Score"] >= 55:
         if score < 3:
             score = 3
             explanation.append("High symptom severity on standard screeners")
 
-    # Priority 4: Moderate Symptoms
     if (15 <= row["PHQ-9 Score"] < 20) or (10 <= row["GAD-7 Score"] < 15):
         if score < 2:
             score = 2
             explanation.append("Moderate symptom severity")
 
-    # Priority 5: Compounding Factors
     if score <= 2:
         compounding_factors = 0
         compounding_details = []
@@ -803,7 +796,6 @@ def handle_button_click(button_type, veteran_id=None, context=""):
     
     response = responses.get(button_type, f"✅ Action '{button_type}' completed successfully at {timestamp}.")
     
-    # Store response in session state
     if 'button_responses' not in st.session_state:
         st.session_state.button_responses = {}
     
@@ -812,9 +804,9 @@ def handle_button_click(button_type, veteran_id=None, context=""):
     
     return response
 
-# --- Calendar Functions ---
+# --- Enhanced Calendar Functions ---
 def create_calendar_view(appointments, year, month):
-    """Create a calendar view for appointments"""
+    """Create an improved calendar view for appointments"""
     cal = calendar.monthcalendar(year, month)
     month_name = calendar.month_name[month]
     
@@ -823,7 +815,7 @@ def create_calendar_view(appointments, year, month):
     # Calendar navigation
     col1, col2, col3 = st.columns([1, 2, 1])
     with col1:
-        if st.button("◀ Previous"):
+        if st.button("◀ Previous", key="prev_month"):
             if month == 1:
                 st.session_state.calendar_view = datetime(year - 1, 12, 1)
             else:
@@ -834,7 +826,7 @@ def create_calendar_view(appointments, year, month):
         st.markdown(f"<div style='text-align: center; font-size: 1.2rem; font-weight: 600;'>{month_name} {year}</div>", unsafe_allow_html=True)
     
     with col3:
-        if st.button("Next ▶"):
+        if st.button("Next ▶", key="next_month"):
             if month == 12:
                 st.session_state.calendar_view = datetime(year + 1, 1, 1)
             else:
@@ -846,7 +838,7 @@ def create_calendar_view(appointments, year, month):
     cols = st.columns(7)
     for i, day in enumerate(days):
         with cols[i]:
-            st.markdown(f"<div style='text-align: center; font-weight: 600; padding: 0.5rem;'>{day}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: center; font-weight: 600; padding: 0.5rem; border-bottom: 2px solid {COLORS['neutral_light_gray']};'>{day}</div>", unsafe_allow_html=True)
     
     # Calendar body
     for week in cal:
@@ -854,7 +846,8 @@ def create_calendar_view(appointments, year, month):
         for i, day in enumerate(week):
             with cols[i]:
                 if day == 0:
-                    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+                    # Empty day - no content, no </div>
+                    st.markdown('<div style="height: 100px;"></div>', unsafe_allow_html=True)
                 else:
                     date_obj = datetime(year, month, day).date()
                     day_appointments = [apt for apt in appointments if apt['date'] == date_obj]
@@ -864,47 +857,72 @@ def create_calendar_view(appointments, year, month):
                     reserved_count = len([apt for apt in day_appointments if apt['status'] == 'reserved'])
                     cancelled_count = len([apt for apt in day_appointments if apt['status'] == 'cancelled'])
                     
-                    # Determine day style based on appointments
+                    # Determine day style
+                    day_classes = ["calendar-day"]
                     if reserved_count > 0:
-                        day_class = "appointment-reserved"
+                        day_classes.append("appointment-reserved")
                     elif available_count > 0:
-                        day_class = "appointment-available"
+                        day_classes.append("appointment-available")
                     elif cancelled_count > 0:
-                        day_class = "appointment-cancelled"
-                    else:
-                        day_class = ""
+                        day_classes.append("appointment-cancelled")
                     
                     appointment_info = ""
                     if available_count > 0:
-                        appointment_info += f"🟢 {available_count} available<br>"
+                        appointment_info += f"<div style='font-size: 0.7rem; color: #16a34a;'>🟢 {available_count} available</div>"
                     if reserved_count > 0:
-                        appointment_info += f"🔵 {reserved_count} reserved<br>"
+                        appointment_info += f"<div style='font-size: 0.7rem; color: #2563eb;'>🔵 {reserved_count} reserved</div>"
                     if cancelled_count > 0:
-                        appointment_info += f"🔴 {cancelled_count} cancelled"
+                        appointment_info += f"<div style='font-size: 0.7rem; color: #dc2626;'>🔴 {cancelled_count} cancelled</div>"
                     
+                    day_html = f"""
+                    <div class="{' '.join(day_classes)}">
+                        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">{day}</div>
+                        {appointment_info}
+                    </div>
+                    """
+                    st.markdown(day_html, unsafe_allow_html=True)
+                    
+                    # Day details button
+                    if day_appointments and st.button(f"View", key=f"view_day_{day}", help=f"View appointments for {month_name} {day}"):
+                        st.session_state.selected_calendar_day = day
+    
+    # Show selected day details
+    if st.session_state.selected_calendar_day:
+        selected_day = st.session_state.selected_calendar_day
+        date_obj = datetime(year, month, selected_day).date()
+        day_appointments = [apt for apt in appointments if apt['date'] == date_obj]
+        
+        if day_appointments:
+            st.markdown(f"""
+            <div class="appointment-details">
+                <h4>📅 Appointments for {month_name} {selected_day}, {year}</h4>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            for apt in sorted(day_appointments, key=lambda x: x['time']):
+                status_colors = {"available": "#16a34a", "reserved": "#2563eb", "cancelled": "#dc2626"}
+                status_icons = {"available": "🟢", "reserved": "🔵", "cancelled": "🔴"}
+                
+                time_str = apt['time'].strftime("%H:%M")
+                color = status_colors[apt['status']]
+                icon = status_icons[apt['status']]
+                
+                if apt['status'] == 'reserved':
                     st.markdown(f"""
-                    <div class="calendar-day {day_class}" title="Click for details">
-                        <div style="font-weight: 600; font-size: 1.1rem;">{day}</div>
-                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">
-                            {appointment_info}
-                        </div>
+                    <div style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid {color}; padding: 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
+                        {icon} <strong>{time_str}</strong> - {apt['veteran_id']} with {apt['clinician']} ({apt['type']})
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Show appointment details when day is clicked
-                    if day_appointments and st.button(f"View {day}", key=f"day_{day}", help="View appointments for this day"):
-                        st.session_state[f"show_day_{day}"] = True
-                    
-                    if st.session_state.get(f"show_day_{day}", False):
-                        with st.expander(f"Appointments for {month_name} {day}", expanded=True):
-                            for apt in sorted(day_appointments, key=lambda x: x['time']):
-                                status_color = {"available": "🟢", "reserved": "🔵", "cancelled": "🔴"}[apt['status']]
-                                time_str = apt['time'].strftime("%H:%M")
-                                
-                                if apt['status'] == 'reserved':
-                                    st.markdown(f"{status_color} **{time_str}** - {apt['veteran_id']} with {apt['clinician']} ({apt['type']})")
-                                else:
-                                    st.markdown(f"{status_color} **{time_str}** - {apt['status'].title()} slot")
+                else:
+                    st.markdown(f"""
+                    <div style="border-left: 4px solid {color}; padding: 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
+                        {icon} <strong>{time_str}</strong> - {apt['status'].title()} slot
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            if st.button("Close Details", key="close_day_details"):
+                st.session_state.selected_calendar_day = None
+                st.rerun()
 
 # --- Enhanced Visualization Functions ---
 def create_va_category_chart(df):
@@ -1384,7 +1402,7 @@ def main():
         """, unsafe_allow_html=True)
         
         st.subheader("📈 Calendar Statistics")
-        today = datetime.now().date()
+        current_date = st.session_state.calendar_view
         month_appointments = [apt for apt in st.session_state.appointments 
                             if apt['date'].month == current_date.month and apt['date'].year == current_date.year]
         
@@ -1396,8 +1414,9 @@ def main():
         st.metric("Reserved Appointments", reserved_total)
         st.metric("Cancelled Slots", cancelled_total)
 
-    # --- Triage Queue ---
-    st.header(f"🎯 Triage Queue ({len(df_filtered)} Veterans)")
+# --- Triage Queue ---
+    # Get the display data first to calculate correct count
+    show_priority_only = False
     
     # Controls
     col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
@@ -1427,6 +1446,9 @@ def main():
         df_display = df_filtered[df_filtered['VA Category'].isin(['Emergent', 'Urgent'])]
     else:
         df_display = df_filtered
+    
+    # Updated header with correct count
+    st.header(f"🎯 Triage Queue ({len(df_display)} Veterans)")
 
     # Display dataframe
     if not df_display.empty:
@@ -1626,7 +1648,7 @@ def main():
                 st.markdown(f"**Intake:** {veteran['Intake Date']}")
                 st.markdown(f"**Clinician:** {veteran['Assigned Clinician']}")
 
-            # Clinical scores with interpretation
+            # Clinical scores with interpretation (without arrows)
             st.markdown("### 📊 Clinical Assessment Scores")
             col1, col2, col3 = st.columns(3)
             
@@ -1651,17 +1673,20 @@ def main():
             with col1:
                 interp, color = get_score_interpretation(veteran['PHQ-9 Score'], "PHQ-9")
                 st.metric("PHQ-9 Depression", f"{color} {veteran['PHQ-9 Score']}", 
-                         delta=interp, help="Patient Health Questionnaire-9")
+                         help="Patient Health Questionnaire-9")
+                st.markdown(f"<small>{interp}</small>", unsafe_allow_html=True)
             
             with col2:
                 interp, color = get_score_interpretation(veteran['GAD-7 Score'], "GAD-7")
                 st.metric("GAD-7 Anxiety", f"{color} {veteran['GAD-7 Score']}", 
-                         delta=interp, help="Generalized Anxiety Disorder-7")
+                         help="Generalized Anxiety Disorder-7")
+                st.markdown(f"<small>{interp}</small>", unsafe_allow_html=True)
             
             with col3:
                 interp, color = get_score_interpretation(veteran['PCL-5 Score'], "PCL-5")
                 st.metric("PCL-5 PTSD", f"{color} {veteran['PCL-5 Score']}", 
-                         delta=interp, help="PTSD Checklist for DSM-5")
+                         help="PTSD Checklist for DSM-5")
+                st.markdown(f"<small>{interp}</small>", unsafe_allow_html=True)
 
             # Risk factors matrix
             st.markdown("### ⚠️ Risk Factor Analysis")
@@ -1834,4 +1859,4 @@ Generated by TriageView Clinical Decision Support System
                 st.sidebar.error(test_response)
 
 if __name__ == "__main__":
-    main()
+    main()        

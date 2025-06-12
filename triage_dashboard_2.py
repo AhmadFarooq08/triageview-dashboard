@@ -1719,8 +1719,8 @@ def main():
             hide_index=True,
         )
         
-        # Note: Removed the duplicate priority cases sections that were here before
-        # since they're now at the top of the dashboard
+        # REMOVED: All duplicate priority cases sections that were previously here
+        # Priority cases are now shown at the top of the dashboard only
         
     else:
         st.warning("⚠️ No veterans match the current criteria. Adjust filters to view data.")

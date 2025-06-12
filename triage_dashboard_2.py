@@ -1005,13 +1005,17 @@ def create_calendar_view(appointments, year, month):
                             st.markdown(day_html, unsafe_allow_html=True)
                         else:
                             # Has appointments - show with appointment info
-                            # Determine day style
+                            # Determine day style based on HIGHEST COUNT
                             day_classes = ["calendar-day"]
-                            if reserved_count > 0:
+                            
+                            # Find which appointment type has the highest count
+                            max_count = max(reserved_count, available_count, cancelled_count)
+                            
+                            if reserved_count == max_count:
                                 day_classes.append("appointment-reserved")
-                            elif available_count > 0:
+                            elif available_count == max_count:
                                 day_classes.append("appointment-available")
-                            elif cancelled_count > 0:
+                            elif cancelled_count == max_count:
                                 day_classes.append("appointment-cancelled")
                             
                             # Build appointment info with better formatting
@@ -1094,7 +1098,7 @@ def create_calendar_view(appointments, year, month):
             if st.button("Close Details", key="close_day_details"):
                 st.session_state.selected_calendar_day = None
                 st.rerun()
-
+                
 # --- Enhanced Visualization Functions ---
 def create_va_category_chart(df):
     """Create VA Category distribution chart"""

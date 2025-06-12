@@ -636,19 +636,21 @@ def generate_synthetic_data(num_records=100):
     # Separate male and female names for accurate gender matching
     male_first_names = ['James', 'Michael', 'Robert', 'John', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Christopher',
                         'Daniel', 'Matthew', 'Anthony', 'Mark', 'Donald', 'Steven', 'Paul', 'Andrew', 'Joshua', 'Kenneth',
-                        'Kevin', 'Brian', 'George', 'Timothy', 'Ronald', 'Jason', 'Edward', 'Jeffrey', 'Ryan', 'Jacob']
+                        'Kevin', 'Brian', 'George', 'Timothy', 'Ronald', 'Jason', 'Edward', 'Jeffrey', 'Ryan', 'Jacob',
+                        'Nicholas', 'Eric', 'Jonathan', 'Stephen', 'Larry', 'Justin', 'Scott', 'Brandon', 'Benjamin', 'Samuel']
     
     female_first_names = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen',
                           'Lisa', 'Nancy', 'Betty', 'Helen', 'Sandra', 'Donna', 'Carol', 'Ruth', 'Sharon', 'Michelle',
-                          'Laura', 'Sarah', 'Kimberly', 'Deborah', 'Dorothy', 'Lisa', 'Nancy', 'Karen', 'Betty', 'Helen']
+                          'Laura', 'Kimberly', 'Deborah', 'Dorothy', 'Amy', 'Angela', 'Ashley', 'Brenda', 'Emma', 'Olivia',
+                          'Cynthia', 'Marie', 'Janet', 'Catherine', 'Frances', 'Christine', 'Samantha', 'Debra', 'Rachel', 'Carolyn']
     
     last_names = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
                   'Anderson', 'Taylor', 'Thomas', 'Hernandez', 'Moore', 'Martin', 'Jackson', 'Thompson', 'White', 'Lopez',
-                  'Lee', 'Gonzalez', 'Harris', 'Clark', 'Lewis', 'Robinson', 'Walker', 'Perez', 'Hall', 'Young']
+                  'Lee', 'Gonzalez', 'Harris', 'Clark', 'Lewis', 'Robinson', 'Walker', 'Perez', 'Hall', 'Young',
+                  'Allen', 'Sanchez', 'Wright', 'King', 'Scott', 'Green', 'Baker', 'Adams', 'Nelson', 'Hill']
     
     # Pre-generate ages with median of 50
     ages = []
-    # Create age distribution centered around 50
     for _ in range(num_records):
         # Use normal distribution centered at 50 with appropriate spread
         age = int(np.random.normal(50, 12))  # Standard deviation of 12 gives good spread
@@ -675,11 +677,15 @@ def generate_synthetic_data(num_records=100):
         # Generate gender first (85% male, 15% female based on VA demographics)
         gender = random.choices(["Male", "Female"], weights=[0.85, 0.15], k=1)[0]
         
-        # Choose appropriate first name based on gender
+        # Choose appropriate first name based on gender - THIS IS THE KEY FIX
         if gender == "Male":
             first_name = random.choice(male_first_names)
-        else:
+        else:  # gender == "Female"
             first_name = random.choice(female_first_names)
+        
+        # Generate last name
+        last_name = random.choice(last_names)
+        full_name = f"{first_name} {last_name}"
         
         # Use pre-generated age with median 50
         age = ages[i]
@@ -689,19 +695,14 @@ def generate_synthetic_data(num_records=100):
         # Determine service era based on realistic age and service periods
         if age >= 70:  # Born 1955 or earlier
             service_era = "Vietnam"
-            enlistment_age = random.randint(18, 25)
         elif age >= 55:  # Born 1956-1970
             service_era = random.choices(["Vietnam", "Gulf War"], weights=[0.3, 0.7], k=1)[0]
-            enlistment_age = random.randint(18, 25)
         elif age >= 40:  # Born 1971-1985
             service_era = random.choices(["Gulf War", "OEF/OIF"], weights=[0.4, 0.6], k=1)[0]
-            enlistment_age = random.randint(18, 30)
         elif age >= 30:  # Born 1986-1995
             service_era = "OEF/OIF"
-            enlistment_age = random.randint(18, 25)
         else:  # Born 1996+
             service_era = random.choices(["OEF/OIF", "Recent"], weights=[0.7, 0.3], k=1)[0]
-            enlistment_age = random.randint(18, 22)
         
         # Generate realistic branch distribution
         branch = random.choices(
@@ -735,18 +736,18 @@ def generate_synthetic_data(num_records=100):
             if phq9_score > 12:
                 phq9_q9_suicide = random.choices(["Yes", "No"], weights=[0.1, 0.9], k=1)[0]
 
-        # Generate realistic intake date (last 30 days, business hours)
+        # Generate realistic intake date (last 30 days) - DATE ONLY, NO TIME
         days_ago = random.randint(0, 30)
-        intake_date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y-%m-%d")
+        intake_date = (datetime.now() - timedelta(days=days_ago)).date().strftime("%Y-%m-%d")
         
-        # Generate realistic last contact (within last 7 days)
+        # Generate realistic last contact (within last 7 days) - DATE ONLY, NO TIME
         contact_days_ago = random.randint(0, 7)
-        last_contact = (datetime.now() - timedelta(days=contact_days_ago)).strftime("%Y-%m-%d")
+        last_contact = (datetime.now() - timedelta(days=contact_days_ago)).date().strftime("%Y-%m-%d")
 
         record = {
             "Veteran ID": f"VET-{1000 + i:04d}",
-            "Name": f"{first_name} {random.choice(last_names)}",
-            "Intake Date": intake_date,
+            "Name": full_name,  # Use the properly constructed name
+            "Intake Date": intake_date,  # This will be date only
             "Age": age,
             "Gender": gender,
             "Branch": branch,
@@ -761,7 +762,7 @@ def generate_synthetic_data(num_records=100):
             "Housing Status": random.choices(["Stable", "At Risk", "Homeless"], weights=[0.75, 0.18, 0.07], k=1)[0],
             "Previous Mental Health Treatment": random.choices(["Yes", "No"], weights=[0.65, 0.35], k=1)[0],
             "Treatment Preference": random.choices(["Therapy", "Medication", "Both"], weights=[0.35, 0.25, 0.4], k=1)[0],
-            "Last Contact": last_contact,
+            "Last Contact": last_contact,  # This will be date only
             "Assigned Clinician": random.choice(["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Davis", "Unassigned"]),
             "Priority Notes": random.choice(["", "Family concerns", "Recent hospitalization", "Employment issues", 
                                            "Financial stress", "Medication compliance", "Transportation barriers", ""]),

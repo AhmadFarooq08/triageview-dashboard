@@ -1696,17 +1696,29 @@ def main():
     else:
         st.warning("⚠️ No veterans match the current criteria. Adjust filters to view data.")
 
-    # --- Individual Veteran Analysis ---
+# --- Individual Veteran Analysis ---
     st.header("🔍 Individual Patient Analysis")
     
     if not df_filtered.empty:
         col1, col2 = st.columns([2, 1])
         with col1:
-            selected_vet_id = st.selectbox(
+            # Create display options with both name and ID
+            veteran_options = []
+            veteran_lookup = {}
+            
+            for _, row in df_filtered.iterrows():
+                display_name = f"{row['Name']} ({row['Veteran ID']})"
+                veteran_options.append(display_name)
+                veteran_lookup[display_name] = row['Veteran ID']
+            
+            selected_display_option = st.selectbox(
                 "Select Veteran for Detailed Analysis",
-                options=df_filtered["Veteran ID"].unique(),
+                options=veteran_options,
                 key="veteran_detail_selector"
             )
+            
+            # Get the actual Veteran ID from the selected display option
+            selected_vet_id = veteran_lookup[selected_display_option]
         
         with col2:
             if st.button("🤖 Generate AI Assessment", key="individual_ai", type="primary"):

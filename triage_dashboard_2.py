@@ -1308,7 +1308,7 @@ def main():
     df = df.sort_values(by=['Category Order', 'Risk Score'], ascending=[False, False]).reset_index(drop=True)
     df = df.drop('Category Order', axis=1)
 
-    # --- Header ---
+# --- Header ---
     st.title("🏥 TriageView: Veteran Mental Health Dashboard")
     st.markdown("*Advanced AI-powered clinical decision support for veteran mental health triage*")
 
@@ -1324,6 +1324,60 @@ def main():
         """, unsafe_allow_html=True)
     elif urgent_cases > 0:
         st.warning(f"⚠️ URGENT: {urgent_cases} veteran(s) require same-day evaluation")
+
+    # --- PRIORITY CASES SECTION (MOVED TO TOP) ---
+    # Get filtered data for priority cases
+    df_filtered_temp = df.copy()  # Use full dataset for priority cases at top
+    
+    # Enhanced quick actions for priority cases - MOVED TO TOP
+    emergent_in_view = df_filtered_temp[df_filtered_temp['VA Category'] == 'Emergent']
+    urgent_in_view = df_filtered_temp[df_filtered_temp['VA Category'] == 'Urgent']
+    
+    if not emergent_in_view.empty:
+        st.header("🚨 Emergent Cases - Immediate Action Required")
+        for _, veteran in emergent_in_view.head(5).iterrows():
+            col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
+            with col1:
+                st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
+            with col2:
+                if st.button("📋 Review", key=f"review_{veteran['Veteran ID']}", help="Open clinical review"):
+                    response = handle_button_click("review", veteran['Veteran ID'])
+                    st.success(response)
+            with col3:
+                if st.button("📞 Contact", key=f"contact_{veteran['Veteran ID']}", help="Prepare contact info"):
+                    response = handle_button_click("contact", veteran['Veteran ID'])
+                    st.success(response)
+            with col4:
+                if st.button("🏥 Crisis", key=f"crisis_{veteran['Veteran ID']}", help="Activate crisis protocol"):
+                    response = handle_button_click("crisis", veteran['Veteran ID'])
+                    st.error(response)
+            with col5:
+                if st.button("📅 Schedule", key=f"schedule_{veteran['Veteran ID']}", help="Emergency scheduling"):
+                    response = handle_button_click("schedule", veteran['Veteran ID'])
+                    st.info(response)
+    
+    if not urgent_in_view.empty:
+        st.header("⚠️ Urgent Cases - Same Day Evaluation Required")
+        for _, veteran in urgent_in_view.head(3).iterrows():
+            col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
+            with col1:
+                st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
+            with col2:
+                if st.button("📋 Review", key=f"review_urgent_{veteran['Veteran ID']}", help="Open clinical review"):
+                    response = handle_button_click("review", veteran['Veteran ID'])
+                    st.success(response)
+            with col3:
+                if st.button("📞 Contact", key=f"contact_urgent_{veteran['Veteran ID']}", help="Prepare contact info"):
+                    response = handle_button_click("contact", veteran['Veteran ID'])
+                    st.success(response)
+            with col4:
+                if st.button("⚠️ Urgent", key=f"urgent_{veteran['Veteran ID']}", help="Same-day scheduling"):
+                    response = handle_button_click("schedule", veteran['Veteran ID'])
+                    st.warning(response)
+            with col5:
+                if st.button("📅 Schedule", key=f"schedule_urgent_{veteran['Veteran ID']}", help="Same-day appointment"):
+                    response = handle_button_click("schedule", veteran['Veteran ID'])
+                    st.info(response)
 
     # --- AI Summary Section ---
     st.header("🤖 AI Clinical Overview")
@@ -1644,55 +1698,9 @@ def main():
             hide_index=True,
         )
         
-        # Enhanced quick actions for priority cases
-        emergent_in_view = df_display[df_display['VA Category'] == 'Emergent']
-        urgent_in_view = df_display[df_display['VA Category'] == 'Urgent']
+        # Note: Removed the duplicate priority cases sections that were here before
+        # since they're now at the top of the dashboard
         
-        if not emergent_in_view.empty:
-            st.subheader("🚨 Emergent Cases - Immediate Action Required")
-            for _, veteran in emergent_in_view.head(5).iterrows():
-                col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
-                with col1:
-                    st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
-                with col2:
-                    if st.button("📋 Review", key=f"review_{veteran['Veteran ID']}", help="Open clinical review"):
-                        response = handle_button_click("review", veteran['Veteran ID'])
-                        st.success(response)
-                with col3:
-                    if st.button("📞 Contact", key=f"contact_{veteran['Veteran ID']}", help="Prepare contact info"):
-                        response = handle_button_click("contact", veteran['Veteran ID'])
-                        st.success(response)
-                with col4:
-                    if st.button("🏥 Crisis", key=f"crisis_{veteran['Veteran ID']}", help="Activate crisis protocol"):
-                        response = handle_button_click("crisis", veteran['Veteran ID'])
-                        st.error(response)
-                with col5:
-                    if st.button("📅 Schedule", key=f"schedule_{veteran['Veteran ID']}", help="Emergency scheduling"):
-                        response = handle_button_click("schedule", veteran['Veteran ID'])
-                        st.info(response)
-        
-        if not urgent_in_view.empty:
-            st.subheader("⚠️ Urgent Cases - Same Day Evaluation Required")
-            for _, veteran in urgent_in_view.head(3).iterrows():
-                col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
-                with col1:
-                    st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
-                with col2:
-                    if st.button("📋 Review", key=f"review_urgent_{veteran['Veteran ID']}", help="Open clinical review"):
-                        response = handle_button_click("review", veteran['Veteran ID'])
-                        st.success(response)
-                with col3:
-                    if st.button("📞 Contact", key=f"contact_urgent_{veteran['Veteran ID']}", help="Prepare contact info"):
-                        response = handle_button_click("contact", veteran['Veteran ID'])
-                        st.success(response)
-                with col4:
-                    if st.button("⚠️ Urgent", key=f"urgent_{veteran['Veteran ID']}", help="Same-day scheduling"):
-                        response = handle_button_click("schedule", veteran['Veteran ID'])
-                        st.warning(response)
-                with col5:
-                    if st.button("📅 Schedule", key=f"schedule_urgent_{veteran['Veteran ID']}", help="Same-day appointment"):
-                        response = handle_button_click("schedule", veteran['Veteran ID'])
-                        st.info(response)
     else:
         st.warning("⚠️ No veterans match the current criteria. Adjust filters to view data.")
 

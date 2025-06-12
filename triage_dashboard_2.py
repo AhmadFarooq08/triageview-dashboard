@@ -1377,28 +1377,28 @@ def main():
                     response = handle_button_click("schedule", veteran['Veteran ID'])
                     st.info(response)
     
-    if not urgent_in_view.empty:
-        st.header("⚠️ Urgent Cases - Same Day Evaluation Required")
-        for _, veteran in urgent_in_view.head(3).iterrows():
-            col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
-            with col1:
-                st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
-            with col2:
-                if st.button("📋 Review", key=f"review_urgent_{veteran['Veteran ID']}", help="Open clinical review"):
-                    response = handle_button_click("review", veteran['Veteran ID'])
-                    st.success(response)
-            with col3:
-                if st.button("📞 Contact", key=f"contact_urgent_{veteran['Veteran ID']}", help="Prepare contact info"):
-                    response = handle_button_click("contact", veteran['Veteran ID'])
-                    st.success(response)
-            with col4:
-                if st.button("⚠️ Urgent", key=f"urgent_{veteran['Veteran ID']}", help="Same-day scheduling"):
-                    response = handle_button_click("schedule", veteran['Veteran ID'])
-                    st.warning(response)
-            with col5:
-                if st.button("📅 Schedule", key=f"schedule_urgent_{veteran['Veteran ID']}", help="Same-day appointment"):
-                    response = handle_button_click("schedule", veteran['Veteran ID'])
-                    st.info(response)
+    # if not urgent_in_view.empty:
+    #     st.header("⚠️ Urgent Cases - Same Day Evaluation Required")
+    #     for _, veteran in urgent_in_view.head(3).iterrows():
+    #         col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
+    #         with col1:
+    #             st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
+    #         with col2:
+    #             if st.button("📋 Review", key=f"review_urgent_{veteran['Veteran ID']}", help="Open clinical review"):
+    #                 response = handle_button_click("review", veteran['Veteran ID'])
+    #                 st.success(response)
+    #         with col3:
+    #             if st.button("📞 Contact", key=f"contact_urgent_{veteran['Veteran ID']}", help="Prepare contact info"):
+    #                 response = handle_button_click("contact", veteran['Veteran ID'])
+    #                 st.success(response)
+    #         with col4:
+    #             if st.button("⚠️ Urgent", key=f"urgent_{veteran['Veteran ID']}", help="Same-day scheduling"):
+    #                 response = handle_button_click("schedule", veteran['Veteran ID'])
+    #                 st.warning(response)
+    #         with col5:
+    #             if st.button("📅 Schedule", key=f"schedule_urgent_{veteran['Veteran ID']}", help="Same-day appointment"):
+    #                 response = handle_button_click("schedule", veteran['Veteran ID'])
+    #                 st.info(response)
 
     # --- AI Summary Section ---
     st.header("🤖 AI Clinical Overview")

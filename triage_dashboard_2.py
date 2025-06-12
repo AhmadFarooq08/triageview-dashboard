@@ -1667,9 +1667,10 @@ def main():
 # --- Triage Queue ---
     # Get the display data first to calculate correct count
     show_priority_only = False
+    show_routine_only = False
     
     # Controls
-    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+    col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
     with col1:
         st.markdown("*Veterans prioritized by VA categories and AI risk assessment. Click actions for immediate response.*")
     
@@ -1677,9 +1678,12 @@ def main():
         show_priority_only = st.checkbox("Emergent/Urgent Only", value=False)
     
     with col3:
-        show_all_columns = st.checkbox("All Columns", value=False)
+        show_routine_only = st.checkbox("Routine Only", value=False)
     
     with col4:
+        show_all_columns = st.checkbox("All Columns", value=False)
+    
+    with col5:
         if not df_filtered.empty:
             if st.button("📥 Export Report"):
                 summary_text = st.session_state.ai_summaries.get('all_patients', 'AI summary not generated')
@@ -1691,10 +1695,18 @@ def main():
                     mime="text/plain"
                 )
 
-    # Apply priority filter if selected
-    if show_priority_only:
+    # Apply display filters based on checkbox selections
+    if show_priority_only and show_routine_only:
+        # If both are selected, show all (ignore both filters)
+        df_display = df_filtered
+    elif show_priority_only:
+        # Show only Emergent and Urgent cases
         df_display = df_filtered[df_filtered['VA Category'].isin(['Emergent', 'Urgent'])]
+    elif show_routine_only:
+        # Show only Routine cases
+        df_display = df_filtered[df_filtered['VA Category'] == 'Routine']
     else:
+        # Show all cases (default)
         df_display = df_filtered
     
     # Updated header with correct count

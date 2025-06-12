@@ -60,27 +60,40 @@ def initialize_session_state():
         st.session_state.selected_calendar_day = None
 
 def generate_sample_appointments():
-    """Generate sample appointments for the calendar"""
+    """Generate sample appointments for the calendar - NO WEEKENDS, 60-minute slots"""
     appointments = []
     today = datetime.now()
     
     for i in range(30):
         date = today + timedelta(days=i)
-        num_appointments = random.randint(0, 8)
         
-        for j in range(num_appointments):
-            hour = random.randint(8, 16)
-            minute = random.choice([0, 30])
+        # Skip weekends (Saturday = 5, Sunday = 6)
+        if date.weekday() in [5, 6]:  # Skip Saturday and Sunday
+            continue
             
-            appointment_time = date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        # Generate appointments only for weekdays (Monday-Friday)
+        # Standard business hours: 8 AM to 4 PM (8 total hour slots)
+        available_hours = [8, 9, 10, 11, 12, 13, 14, 15, 16]  # 8 AM to 4 PM
+        
+        # Randomly assign some of these hours as appointments
+        num_appointments = random.randint(0, min(8, len(available_hours)))
+        selected_hours = random.sample(available_hours, num_appointments)
+        
+        for hour in selected_hours:
+            # 60-minute appointments starting on the hour (minute = 0)
+            appointment_time = date.replace(hour=hour, minute=0, second=0, microsecond=0)
             
             status = random.choices(['available', 'reserved', 'cancelled'], weights=[0.4, 0.5, 0.1])[0]
+            
+            # Determine appointment type (face-to-face vs online)
+            appointment_mode = random.choices(['Face-to-Face', 'Video Call'], weights=[0.6, 0.4])[0]
             
             appointments.append({
                 'date': appointment_time.date(),
                 'time': appointment_time.time(),
                 'datetime': appointment_time,
                 'status': status,
+                'mode': appointment_mode,  # New field for appointment type
                 'veteran_id': f"VET-{1000 + random.randint(1, 100):04d}" if status == 'reserved' else None,
                 'clinician': random.choice(["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Davis"]) if status == 'reserved' else None,
                 'type': random.choice(["Initial Assessment", "Follow-up", "Crisis Intervention", "Medication Review"]) if status == 'reserved' else None
@@ -901,12 +914,18 @@ def create_calendar_view(appointments, year, month):
                 st.session_state.calendar_view = datetime(year, month + 1, 1)
             st.rerun()
     
-    # Calendar header
+    # Calendar header with weekend colors
     days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     cols = st.columns(7)
     for i, day in enumerate(days):
         with cols[i]:
-            st.markdown(f"<div style='text-align: center; font-weight: 600; padding: 0.5rem; border-bottom: 2px solid {COLORS['neutral_light_gray']};'>{day}</div>", unsafe_allow_html=True)
+            # Color weekends (Sat, Sun) in red
+            if day in ['Sat', 'Sun']:
+                color = '#dc2626'  # Red color for weekends
+            else:
+                color = COLORS['neutral_charcoal']  # Normal color for weekdays
+                
+            st.markdown(f"<div style='text-align: center; font-weight: 600; padding: 0.5rem; border-bottom: 2px solid {COLORS['neutral_light_gray']}; color: {color};'>{day}</div>", unsafe_allow_html=True)
     
     # Calendar body
     for week in cal:
@@ -914,45 +933,71 @@ def create_calendar_view(appointments, year, month):
         for i, day in enumerate(week):
             with cols[i]:
                 if day == 0:
-                    # Empty day - no content, no </div>
+                    # Empty day - no content
                     st.markdown('<div style="height: 100px;"></div>', unsafe_allow_html=True)
                 else:
                     date_obj = datetime(year, month, day).date()
-                    day_appointments = [apt for apt in appointments if apt['date'] == date_obj]
+                    weekday = date_obj.weekday()  # Monday = 0, Sunday = 6
                     
-                    # Count appointments by status
-                    available_count = len([apt for apt in day_appointments if apt['status'] == 'available'])
-                    reserved_count = len([apt for apt in day_appointments if apt['status'] == 'reserved'])
-                    cancelled_count = len([apt for apt in day_appointments if apt['status'] == 'cancelled'])
+                    # Check if it's weekend (Saturday = 5, Sunday = 6)
+                    is_weekend = weekday in [5, 6]
                     
-                    # Determine day style
-                    day_classes = ["calendar-day"]
-                    if reserved_count > 0:
-                        day_classes.append("appointment-reserved")
-                    elif available_count > 0:
-                        day_classes.append("appointment-available")
-                    elif cancelled_count > 0:
-                        day_classes.append("appointment-cancelled")
-                    
-                    appointment_info = ""
-                    if available_count > 0:
-                        appointment_info += f"<div style='font-size: 0.7rem; color: #16a34a;'>🟢 {available_count} available</div>"
-                    if reserved_count > 0:
-                        appointment_info += f"<div style='font-size: 0.7rem; color: #2563eb;'>🔵 {reserved_count} reserved</div>"
-                    if cancelled_count > 0:
-                        appointment_info += f"<div style='font-size: 0.7rem; color: #dc2626;'>🔴 {cancelled_count} cancelled</div>"
-                    
-                    day_html = f"""
-                    <div class="{' '.join(day_classes)}">
-                        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">{day}</div>
-                        {appointment_info}
-                    </div>
-                    """
-                    st.markdown(day_html, unsafe_allow_html=True)
-                    
-                    # Day details button
-                    if day_appointments and st.button(f"View", key=f"view_day_{day}", help=f"View appointments for {month_name} {day}"):
-                        st.session_state.selected_calendar_day = day
+                    if is_weekend:
+                        # Weekend - no appointments, different styling
+                        day_html = f"""
+                        <div class="calendar-day" style="background-color: #f8f9fa; border-color: #dc2626;">
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem; color: #dc2626;">{day}</div>
+                            <div style="font-size: 0.7rem; color: #6b7280;">No Appointments</div>
+                        </div>
+                        """
+                        st.markdown(day_html, unsafe_allow_html=True)
+                    else:
+                        # Weekday - normal appointment logic
+                        day_appointments = [apt for apt in appointments if apt['date'] == date_obj]
+                        
+                        # Count appointments by status
+                        available_count = len([apt for apt in day_appointments if apt['status'] == 'available'])
+                        reserved_count = len([apt for apt in day_appointments if apt['status'] == 'reserved'])
+                        cancelled_count = len([apt for apt in day_appointments if apt['status'] == 'cancelled'])
+                        
+                        # Count by mode
+                        face_to_face_count = len([apt for apt in day_appointments if apt['mode'] == 'Face-to-Face'])
+                        video_count = len([apt for apt in day_appointments if apt['mode'] == 'Video Call'])
+                        
+                        # Determine day style
+                        day_classes = ["calendar-day"]
+                        if reserved_count > 0:
+                            day_classes.append("appointment-reserved")
+                        elif available_count > 0:
+                            day_classes.append("appointment-available")
+                        elif cancelled_count > 0:
+                            day_classes.append("appointment-cancelled")
+                        
+                        appointment_info = ""
+                        if available_count > 0:
+                            appointment_info += f"<div style='font-size: 0.7rem; color: #16a34a;'>🟢 {available_count} available</div>"
+                        if reserved_count > 0:
+                            appointment_info += f"<div style='font-size: 0.7rem; color: #2563eb;'>🔵 {reserved_count} reserved</div>"
+                        if cancelled_count > 0:
+                            appointment_info += f"<div style='font-size: 0.7rem; color: #dc2626;'>🔴 {cancelled_count} cancelled</div>"
+                        
+                        # Add mode information
+                        if face_to_face_count > 0:
+                            appointment_info += f"<div style='font-size: 0.6rem; color: #8b5cf6;'>🏥 {face_to_face_count} in-person</div>"
+                        if video_count > 0:
+                            appointment_info += f"<div style='font-size: 0.6rem; color: #06b6d4;'>💻 {video_count} video</div>"
+                        
+                        day_html = f"""
+                        <div class="{' '.join(day_classes)}">
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">{day}</div>
+                            {appointment_info}
+                        </div>
+                        """
+                        st.markdown(day_html, unsafe_allow_html=True)
+                        
+                        # Day details button only for weekdays with appointments
+                        if day_appointments and st.button(f"View", key=f"view_day_{day}", help=f"View appointments for {month_name} {day}"):
+                            st.session_state.selected_calendar_day = day
     
     # Show selected day details
     if st.session_state.selected_calendar_day:
@@ -970,21 +1015,23 @@ def create_calendar_view(appointments, year, month):
             for apt in sorted(day_appointments, key=lambda x: x['time']):
                 status_colors = {"available": "#16a34a", "reserved": "#2563eb", "cancelled": "#dc2626"}
                 status_icons = {"available": "🟢", "reserved": "🔵", "cancelled": "🔴"}
+                mode_icons = {"Face-to-Face": "🏥", "Video Call": "💻"}
                 
                 time_str = apt['time'].strftime("%H:%M")
                 color = status_colors[apt['status']]
                 icon = status_icons[apt['status']]
+                mode_icon = mode_icons[apt['mode']]
                 
                 if apt['status'] == 'reserved':
                     st.markdown(f"""
                     <div style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid {color}; padding: 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
-                        {icon} <strong>{time_str}</strong> - {apt['veteran_id']} with {apt['clinician']} ({apt['type']})
+                        {icon} <strong>{time_str}-{int(time_str.split(':')[0])+1}:00</strong> - {apt['veteran_id']} with {apt['clinician']} ({apt['type']}) {mode_icon} {apt['mode']}
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
                     <div style="border-left: 4px solid {color}; padding: 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
-                        {icon} <strong>{time_str}</strong> - {apt['status'].title()} slot
+                        {icon} <strong>{time_str}-{int(time_str.split(':')[0])+1}:00</strong> - {apt['status'].title()} slot {mode_icon} {apt['mode']}
                     </div>
                     """, unsafe_allow_html=True)
             

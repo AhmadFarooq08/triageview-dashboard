@@ -992,52 +992,65 @@ def create_calendar_view(appointments, year, month):
                         face_to_face_count = len([apt for apt in day_appointments if apt['mode'] == 'Face-to-Face'])
                         video_count = len([apt for apt in day_appointments if apt['mode'] == 'Video Call'])
                         
-                        # Determine day style
-                        day_classes = ["calendar-day"]
-                        if reserved_count > 0:
-                            day_classes.append("appointment-reserved")
-                        elif available_count > 0:
-                            day_classes.append("appointment-available")
-                        elif cancelled_count > 0:
-                            day_classes.append("appointment-cancelled")
+                        # Check if there are any appointments at all
+                        total_appointments = available_count + reserved_count + cancelled_count
                         
-                        # Build appointment info with better formatting
-                        appointment_lines = []
-                        
-                        # Status lines (prioritize most important)
-                        if reserved_count > 0:
-                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #2563eb;">🔵 {reserved_count}</div>')
-                        if available_count > 0:
-                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #16a34a;">🟢 {available_count}</div>')
-                        if cancelled_count > 0:
-                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #dc2626;">🔴 {cancelled_count}</div>')
-                        
-                        # Mode lines (only if there are appointments)
-                        if face_to_face_count > 0:
-                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #8b5cf6;">🏥 {face_to_face_count}</div>')
-                        if video_count > 0:
-                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #06b6d4;">💻 {video_count}</div>')
-                        
-                        # Limit to max 4 lines to prevent overflow
-                        if len(appointment_lines) > 4:
-                            appointment_lines = appointment_lines[:3]
-                            appointment_lines.append('<div class="calendar-appointment-line" style="color: #6b7280;">...</div>')
-                        
-                        appointment_info = ''.join(appointment_lines)
-                        
-                        day_html = f"""
-                        <div class="{' '.join(day_classes)}" style="min-height: 90px; max-height: 90px;">
-                            <div class="calendar-day-number">{day}</div>
-                            <div class="calendar-appointment-info">
-                                {appointment_info}
+                        if total_appointments == 0:
+                            # No appointments - show clean empty day
+                            day_html = f"""
+                            <div class="calendar-day" style="min-height: 90px; max-height: 90px;">
+                                <div class="calendar-day-number">{day}</div>
                             </div>
-                        </div>
-                        """
-                        st.markdown(day_html, unsafe_allow_html=True)
-                        
-                        # Day details button only for weekdays with appointments
-                        if day_appointments and st.button(f"View", key=f"view_day_{day}", help=f"View appointments for {month_name} {day}"):
-                            st.session_state.selected_calendar_day = day
+                            """
+                            st.markdown(day_html, unsafe_allow_html=True)
+                        else:
+                            # Has appointments - show with appointment info
+                            # Determine day style
+                            day_classes = ["calendar-day"]
+                            if reserved_count > 0:
+                                day_classes.append("appointment-reserved")
+                            elif available_count > 0:
+                                day_classes.append("appointment-available")
+                            elif cancelled_count > 0:
+                                day_classes.append("appointment-cancelled")
+                            
+                            # Build appointment info with better formatting
+                            appointment_lines = []
+                            
+                            # Status lines (prioritize most important)
+                            if reserved_count > 0:
+                                appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #2563eb;">🔵 {reserved_count}</div>')
+                            if available_count > 0:
+                                appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #16a34a;">🟢 {available_count}</div>')
+                            if cancelled_count > 0:
+                                appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #dc2626;">🔴 {cancelled_count}</div>')
+                            
+                            # Mode lines (only if there are appointments)
+                            if face_to_face_count > 0:
+                                appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #8b5cf6;">🏥 {face_to_face_count}</div>')
+                            if video_count > 0:
+                                appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #06b6d4;">💻 {video_count}</div>')
+                            
+                            # Limit to max 4 lines to prevent overflow
+                            if len(appointment_lines) > 4:
+                                appointment_lines = appointment_lines[:3]
+                                appointment_lines.append('<div class="calendar-appointment-line" style="color: #6b7280;">...</div>')
+                            
+                            appointment_info = ''.join(appointment_lines)
+                            
+                            day_html = f"""
+                            <div class="{' '.join(day_classes)}" style="min-height: 90px; max-height: 90px;">
+                                <div class="calendar-day-number">{day}</div>
+                                <div class="calendar-appointment-info">
+                                    {appointment_info}
+                                </div>
+                            </div>
+                            """
+                            st.markdown(day_html, unsafe_allow_html=True)
+                            
+                            # Day details button only for weekdays with appointments
+                            if st.button(f"View", key=f"view_day_{day}", help=f"View appointments for {month_name} {day}"):
+                                st.session_state.selected_calendar_day = day
     
     # Show selected day details
     if st.session_state.selected_calendar_day:

@@ -779,11 +779,11 @@ def generate_synthetic_data(num_records=100):
 
         # Generate realistic intake date (last 30 days) - DATE ONLY, NO TIME
         days_ago = random.randint(0, 30)
-        intake_date = (datetime.now() - timedelta(days=days_ago)).date().strftime("%Y-%m-%d")
+        intake_date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y-%m-%d")
         
         # Generate realistic last contact (within last 7 days) - DATE ONLY, NO TIME
         contact_days_ago = random.randint(0, 7)
-        last_contact = (datetime.now() - timedelta(days=contact_days_ago)).date().strftime("%Y-%m-%d")
+        last_contact = (datetime.now() - timedelta(days=contact_days_ago)).strftime("%Y-%m-%d")
 
         record = {
             "Veteran ID": f"VET-{1000 + i:04d}",
@@ -1826,14 +1826,27 @@ def main():
                     st.markdown("**Priority Notes:**")
                     st.markdown(f"> {veteran['Priority Notes']}")
             
+            # with col2:
+            #     st.markdown("### 👤 Demographics")
+            #     st.markdown(f"**Name:** {veteran['Name']}")
+            #     st.markdown(f"**Age:** {veteran['Age']} | **Gender:** {veteran['Gender']}")
+            #     st.markdown(f"**Branch:** {veteran['Branch']}")
+            #     st.markdown(f"**Service Era:** {veteran['Service Era']}")
+            #     st.markdown(f"**Intake:** {veteran['Intake Date']}")
+            #     st.markdown(f"**Clinician:** {veteran['Assigned Clinician']}")
+
             with col2:
                 st.markdown("### 👤 Demographics")
                 st.markdown(f"**Name:** {veteran['Name']}")
                 st.markdown(f"**Age:** {veteran['Age']} | **Gender:** {veteran['Gender']}")
                 st.markdown(f"**Branch:** {veteran['Branch']}")
                 st.markdown(f"**Service Era:** {veteran['Service Era']}")
-                st.markdown(f"**Intake:** {veteran['Intake Date']}")
-                st.markdown(f"**Clinician:** {veteran['Assigned Clinician']}")
+                # Format intake date to show only date, no time
+                intake_date_display = veteran['Intake Date']
+                if isinstance(intake_date_display, str) and ' ' in intake_date_display:
+                    intake_date_display = intake_date_display.split(' ')[0]
+                st.markdown(f"**Intake:** {intake_date_display}")
+                st.markdown(f"**Clinician:** {veteran['Assigned Clinician']}")    
 
             # Clinical scores with interpretation (without arrows)
             st.markdown("### 📊 Clinical Assessment Scores")

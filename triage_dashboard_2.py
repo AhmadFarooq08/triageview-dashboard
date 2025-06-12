@@ -101,7 +101,7 @@ def generate_sample_appointments():
     
     return appointments
 
-# --- Enhanced CSS for Better UI/UX ---
+# --- Enhanced CSS for Better UI/UX (Updated Calendar Styling) ---
 def load_enhanced_css():
     st.markdown(f"""
     <style>
@@ -264,7 +264,7 @@ def load_enhanced_css():
             background: linear-gradient(135deg, {COLORS['secondary_deep_teal']}, {COLORS['primary_blue']}) !important;
         }}
         
-        /* Calendar styling */
+        /* FIXED Calendar styling */
         .calendar-container {{
             background: {COLORS['neutral_white']};
             border-radius: 12px;
@@ -277,20 +277,24 @@ def load_enhanced_css():
             aspect-ratio: 1;
             border: 1px solid {COLORS['neutral_light_gray']};
             border-radius: 8px;
-            padding: 0.5rem;
+            padding: 0.4rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            min-height: 80px;
+            min-height: 90px;
+            max-height: 90px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
+            overflow: hidden;
+            position: relative;
         }}
         
         .calendar-day:hover {{
             background-color: {COLORS['secondary_light_sky']};
             transform: scale(1.02);
+            z-index: 10;
         }}
         
         .calendar-day-empty {{
@@ -325,6 +329,30 @@ def load_enhanced_css():
             padding: 1rem;
             margin-top: 1rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }}
+        
+        /* Calendar day number styling */
+        .calendar-day-number {{
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+            line-height: 1;
+        }}
+        
+        /* Calendar appointment info styling */
+        .calendar-appointment-info {{
+            font-size: 0.6rem;
+            line-height: 1.1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }}
+        
+        .calendar-appointment-line {{
+            margin: 0.1rem 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }}
         
         /* Priority alert enhancements */
@@ -887,7 +915,7 @@ def handle_button_click(button_type, veteran_id=None, context=""):
 
 # --- Enhanced Calendar Functions ---
 def create_calendar_view(appointments, year, month):
-    """Create an improved calendar view for appointments"""
+    """Create an improved calendar view for appointments with better text handling"""
     cal = calendar.monthcalendar(year, month)
     month_name = calendar.month_name[month]
     
@@ -934,7 +962,7 @@ def create_calendar_view(appointments, year, month):
             with cols[i]:
                 if day == 0:
                     # Empty day - no content
-                    st.markdown('<div style="height: 100px;"></div>', unsafe_allow_html=True)
+                    st.markdown('<div style="height: 90px;"></div>', unsafe_allow_html=True)
                 else:
                     date_obj = datetime(year, month, day).date()
                     weekday = date_obj.weekday()  # Monday = 0, Sunday = 6
@@ -945,9 +973,9 @@ def create_calendar_view(appointments, year, month):
                     if is_weekend:
                         # Weekend - no appointments, different styling
                         day_html = f"""
-                        <div class="calendar-day" style="background-color: #f8f9fa; border-color: #dc2626;">
-                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem; color: #dc2626;">{day}</div>
-                            <div style="font-size: 0.7rem; color: #6b7280;">No Appointments</div>
+                        <div class="calendar-day" style="background-color: #f8f9fa; border-color: #dc2626; min-height: 90px; max-height: 90px;">
+                            <div class="calendar-day-number" style="color: #dc2626;">{day}</div>
+                            <div class="calendar-appointment-info" style="color: #6b7280; font-size: 0.6rem;">No Appointments</div>
                         </div>
                         """
                         st.markdown(day_html, unsafe_allow_html=True)
@@ -973,24 +1001,36 @@ def create_calendar_view(appointments, year, month):
                         elif cancelled_count > 0:
                             day_classes.append("appointment-cancelled")
                         
-                        appointment_info = ""
-                        if available_count > 0:
-                            appointment_info += f"<div style='font-size: 0.7rem; color: #16a34a;'>🟢 {available_count} available</div>"
-                        if reserved_count > 0:
-                            appointment_info += f"<div style='font-size: 0.7rem; color: #2563eb;'>🔵 {reserved_count} reserved</div>"
-                        if cancelled_count > 0:
-                            appointment_info += f"<div style='font-size: 0.7rem; color: #dc2626;'>🔴 {cancelled_count} cancelled</div>"
+                        # Build appointment info with better formatting
+                        appointment_lines = []
                         
-                        # Add mode information
+                        # Status lines (prioritize most important)
+                        if reserved_count > 0:
+                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #2563eb;">🔵 {reserved_count}</div>')
+                        if available_count > 0:
+                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #16a34a;">🟢 {available_count}</div>')
+                        if cancelled_count > 0:
+                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #dc2626;">🔴 {cancelled_count}</div>')
+                        
+                        # Mode lines (only if there are appointments)
                         if face_to_face_count > 0:
-                            appointment_info += f"<div style='font-size: 0.6rem; color: #8b5cf6;'>🏥 {face_to_face_count} in-person</div>"
+                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #8b5cf6;">🏥 {face_to_face_count}</div>')
                         if video_count > 0:
-                            appointment_info += f"<div style='font-size: 0.6rem; color: #06b6d4;'>💻 {video_count} video</div>"
+                            appointment_lines.append(f'<div class="calendar-appointment-line" style="color: #06b6d4;">💻 {video_count}</div>')
+                        
+                        # Limit to max 4 lines to prevent overflow
+                        if len(appointment_lines) > 4:
+                            appointment_lines = appointment_lines[:3]
+                            appointment_lines.append('<div class="calendar-appointment-line" style="color: #6b7280;">...</div>')
+                        
+                        appointment_info = ''.join(appointment_lines)
                         
                         day_html = f"""
-                        <div class="{' '.join(day_classes)}">
-                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem;">{day}</div>
-                            {appointment_info}
+                        <div class="{' '.join(day_classes)}" style="min-height: 90px; max-height: 90px;">
+                            <div class="calendar-day-number">{day}</div>
+                            <div class="calendar-appointment-info">
+                                {appointment_info}
+                            </div>
                         </div>
                         """
                         st.markdown(day_html, unsafe_allow_html=True)
@@ -1018,6 +1058,9 @@ def create_calendar_view(appointments, year, month):
                 mode_icons = {"Face-to-Face": "🏥", "Video Call": "💻"}
                 
                 time_str = apt['time'].strftime("%H:%M")
+                end_hour = int(time_str.split(':')[0]) + 1
+                time_range = f"{time_str}-{end_hour:02d}:00"
+                
                 color = status_colors[apt['status']]
                 icon = status_icons[apt['status']]
                 mode_icon = mode_icons[apt['mode']]
@@ -1025,13 +1068,13 @@ def create_calendar_view(appointments, year, month):
                 if apt['status'] == 'reserved':
                     st.markdown(f"""
                     <div style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid {color}; padding: 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
-                        {icon} <strong>{time_str}-{int(time_str.split(':')[0])+1}:00</strong> - {apt['veteran_id']} with {apt['clinician']} ({apt['type']}) {mode_icon} {apt['mode']}
+                        {icon} <strong>{time_range}</strong> - {apt['veteran_id']} with {apt['clinician']} ({apt['type']}) {mode_icon} {apt['mode']}
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
                     <div style="border-left: 4px solid {color}; padding: 0.5rem; margin: 0.25rem 0; border-radius: 4px;">
-                        {icon} <strong>{time_str}-{int(time_str.split(':')[0])+1}:00</strong> - {apt['status'].title()} slot {mode_icon} {apt['mode']}
+                        {icon} <strong>{time_range}</strong> - {apt['status'].title()} slot {mode_icon} {apt['mode']}
                     </div>
                     """, unsafe_allow_html=True)
             

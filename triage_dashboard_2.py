@@ -8,7 +8,8 @@ import plotly.graph_objects as go
 import json
 import requests
 import time
-from modern_styling import load_modern_css, create_modern_container, create_metric_card, create_status_badge
+from calendar import monthrange
+import calendar
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -17,9 +18,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Load modern CSS immediately after page config
-load_modern_css()
 
 # --- VETERAN-FOCUSED COLOR PALETTE ---
 COLORS = {
@@ -37,7 +35,7 @@ COLORS = {
     "neutral_charcoal": "#333333"
 }
 
-# --- Gemini AI Configuration (Free Tier) ---
+# --- Gemini AI Configuration ---
 GEMINI_API_KEY = "AIzaSyAdvvEDdIaXUqQvNR__5NB_RDHkzAzKuXc"
 
 # --- Initialize session state ---
@@ -52,339 +50,420 @@ def initialize_session_state():
         st.session_state.ai_summaries = {}
     if 'dataset_generated' not in st.session_state:
         st.session_state.dataset_generated = False
+    if 'button_responses' not in st.session_state:
+        st.session_state.button_responses = {}
+    if 'calendar_view' not in st.session_state:
+        st.session_state.calendar_view = datetime.now()
+    if 'appointments' not in st.session_state:
+        st.session_state.appointments = generate_sample_appointments()
 
-# --- Custom CSS for Enhanced Styling ---
-def load_css():
+def generate_sample_appointments():
+    """Generate sample appointments for the calendar"""
+    appointments = []
+    today = datetime.now()
+    
+    # Generate appointments for next 30 days
+    for i in range(30):
+        date = today + timedelta(days=i)
+        # Random number of appointments per day (0-8)
+        num_appointments = random.randint(0, 8)
+        
+        for j in range(num_appointments):
+            hour = random.randint(8, 16)  # 8 AM to 4 PM
+            minute = random.choice([0, 30])  # 30-minute slots
+            
+            appointment_time = date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            
+            status = random.choices(['available', 'reserved', 'cancelled'], weights=[0.4, 0.5, 0.1])[0]
+            
+            appointments.append({
+                'date': appointment_time.date(),
+                'time': appointment_time.time(),
+                'datetime': appointment_time,
+                'status': status,
+                'veteran_id': f"VET-{1000 + random.randint(1, 100):04d}" if status == 'reserved' else None,
+                'clinician': random.choice(["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Davis"]) if status == 'reserved' else None,
+                'type': random.choice(["Initial Assessment", "Follow-up", "Crisis Intervention", "Medication Review"]) if status == 'reserved' else None
+            })
+    
+    return appointments
+
+# --- Enhanced CSS for Better UI/UX ---
+def load_enhanced_css():
     st.markdown(f"""
     <style>
-        /* Main App Font and Background */
-        html, body, [class*="st-"], .main {{
+        /* Import modern font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        /* Global styling */
+        .stApp {{
             background-color: {COLORS['neutral_off_white']};
             color: {COLORS['neutral_charcoal']};
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }}
         
-        /* Sidebar Styling */
-        .st-emotion-cache-16txtl3 {{
-            background-color: {COLORS['neutral_white']};
+        /* Fix sidebar and main content layout issues */
+        .css-1d391kg {{
+            background: linear-gradient(180deg, {COLORS['neutral_white']}, #f8f9fa);
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            height: 100vh !important;
+            z-index: 999 !important;
+            width: 21rem !important;
+            overflow-y: auto !important;
         }}
         
-        /* Headers and Titles */
-        h1, h2, h3 {{
-            color: {COLORS['neutral_charcoal']};
-            font-weight: 600;
+        /* Main content area adjustments */
+        .main .block-container {{
+            padding: 2rem 2rem 2rem 2rem !important;
+            margin-left: 0 !important;
+            max-width: none !important;
         }}
         
-        /* Chart container styling for centered titles */
-        .chart-container {{
-            background-color: {COLORS['neutral_white']};
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: 0.5rem 0;
+        /* Adjust main content when sidebar is open */
+        section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {{
+            margin-left: 21rem !important;
+            transition: margin-left 0.3s ease !important;
         }}
         
-        /* Custom metric styling */
-        .metric-card {{
-            background-color: {COLORS['neutral_white']};
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid {COLORS['primary_blue']};
-            margin: 0.5rem 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        section[data-testid="stSidebar"][aria-expanded="false"] ~ .main .block-container {{
+            margin-left: 0 !important;
+            transition: margin-left 0.3s ease !important;
         }}
         
-        /* Priority alert styling */
-        .priority-alert {{
-            background-color: {COLORS['accent_coral']};
-            color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-            text-align: center;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Responsive adjustments */
+        @media (max-width: 768px) {{
+            section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {{
+                margin-left: 0 !important;
+            }}
+            
+            .css-1d391kg {{
+                width: 100% !important;
+            }}
+            
+            .main .block-container {{
+                padding: 1rem !important;
+            }}
         }}
         
-        /* AI Summary Box */
-        .ai-summary-box {{
-            background: linear-gradient(135deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
-            color: white;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        /* Enhanced AI summary boxes - NO WHITE BACKGROUND */
+        .ai-summary-all-patients {{
+            background: linear-gradient(135deg, rgba(91, 155, 211, 0.15), rgba(62, 138, 126, 0.15)) !important;
+            border: 2px solid {COLORS['primary_blue']} !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            margin: 1rem 0 !important;
+            box-shadow: 0 4px 12px rgba(91, 155, 211, 0.2) !important;
+            position: relative !important;
         }}
         
-        /* Action Button Styling */
-        .action-button {{
-            background-color: {COLORS['primary_blue']};
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            margin: 0.25rem;
-            transition: background-color 0.3s;
+        .ai-summary-all-patients::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
+            border-radius: 12px 12px 0 0;
         }}
         
-        .action-button:hover {{
-            background-color: {COLORS['primary_teal']};
-        }}
-        
-        /* Filter reset notification */
-        .filter-reset-notification {{
-            background-color: {COLORS['accent_green']};
-            color: white;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            margin: 0.5rem 0;
-            text-align: center;
-        }}
-        
-        /* Enhanced table styling */
-        .stDataFrame {{
-            border-radius: 0.5rem;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border: 1px solid {COLORS['neutral_light_gray']};
-        }}
-        
-        /* AI status indicators */
-        .ai-status-success {{
-            background-color: {COLORS['accent_green']};
-            color: white;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            margin: 0.5rem 0;
-        }}
-        
-        .ai-status-error {{
-            background-color: {COLORS['accent_coral']};
-            color: white;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            margin: 0.5rem 0;
-        }}
-        
-        /* Chart container improvements - remove white boxes */
-        .js-plotly-plot {{
-            border-radius: 0.5rem;
+        .ai-summary-all-patients h4 {{
+            color: {COLORS['primary_blue']} !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
             background: transparent !important;
         }}
         
-        /* Button styling improvements - clean and professional */
+        .ai-summary-all-patients p {{
+            color: {COLORS['neutral_charcoal']} !important;
+            line-height: 1.6 !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+            background: transparent !important;
+        }}
+        
+        .ai-summary-individual {{
+            background: linear-gradient(135deg, rgba(62, 138, 126, 0.15), rgba(119, 221, 119, 0.15)) !important;
+            border: 2px solid {COLORS['primary_teal']} !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            margin: 1rem 0 !important;
+            box-shadow: 0 4px 12px rgba(62, 138, 126, 0.2) !important;
+            position: relative !important;
+        }}
+        
+        .ai-summary-individual::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, {COLORS['primary_teal']}, {COLORS['accent_green']});
+            border-radius: 12px 12px 0 0;
+        }}
+        
+        .ai-summary-individual h4 {{
+            color: {COLORS['primary_teal']} !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            background: transparent !important;
+        }}
+        
+        .ai-summary-individual p {{
+            color: {COLORS['neutral_charcoal']} !important;
+            line-height: 1.6 !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+            background: transparent !important;
+        }}
+        
+        /* Button response styling */
+        .button-response {{
+            background: linear-gradient(135deg, rgba(119, 221, 119, 0.2), rgba(62, 138, 126, 0.2)) !important;
+            border: 1px solid {COLORS['accent_green']} !important;
+            border-radius: 8px !important;
+            padding: 1rem !important;
+            margin: 0.5rem 0 !important;
+            color: {COLORS['neutral_charcoal']} !important;
+            font-weight: 500 !important;
+            box-shadow: 0 2px 4px rgba(119, 221, 119, 0.1) !important;
+        }}
+        
+        /* Enhanced button styling */
         .stButton > button {{
-            border-radius: 0.375rem !important;
+            border-radius: 0.5rem !important;
             border: none !important;
-            background-color: {COLORS['primary_blue']} !important;
+            background: linear-gradient(135deg, {COLORS['primary_blue']}, {COLORS['primary_teal']}) !important;
             color: white !important;
             font-weight: 500 !important;
-            transition: all 0.2s ease !important;
-            box-shadow: none !important;
-            padding: 0.5rem 1rem !important;
             font-size: 0.875rem !important;
+            padding: 0.6rem 1.2rem !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             width: 100% !important;
         }}
         
         .stButton > button:hover {{
-            background-color: {COLORS['primary_teal']} !important;
-            transform: none !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+            background: linear-gradient(135deg, {COLORS['secondary_deep_teal']}, {COLORS['primary_blue']}) !important;
         }}
         
-        .stButton > button:focus {{
-            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.2) !important;
-            outline: none !important;
+        /* Specific button variants */
+        .stButton[data-testid*="crisis"] > button,
+        .emergency-button {{
+            background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
         }}
         
-        .stButton > button:active {{
-            background-color: {COLORS['secondary_deep_teal']} !important;
-            transform: translateY(1px) !important;
+        .stButton[data-testid*="urgent"] > button,
+        .urgent-button {{
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
         }}
         
-        /* Remove any default button styling */
-        .stButton > button * {{
-            background: transparent !important;
+        .stButton[data-testid*="routine"] > button,
+        .routine-button {{
+            background: linear-gradient(135deg, {COLORS['accent_green']}, #6bc373) !important;
+            box-shadow: 0 4px 12px rgba(119, 221, 119, 0.3) !important;
         }}
         
-        /* Specific button color variants */
-        .stButton[data-testid*="review"] > button {{
-            background-color: {COLORS['primary_blue']} !important;
+        /* Calendar styling */
+        .calendar-container {{
+            background: {COLORS['neutral_white']};
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin: 1rem 0;
         }}
         
-        .stButton[data-testid*="contact"] > button {{
-            background-color: {COLORS['primary_teal']} !important;
-        }}
-        
-        .stButton[data-testid*="crisis"] > button {{
-            background-color: {COLORS['accent_coral']} !important;
-        }}
-        
-        .stButton[data-testid*="urgent"] > button {{
-            background-color: {COLORS['secondary_sandstone']} !important;
-            color: {COLORS['neutral_charcoal']} !important;
-        }}
-        
-        /* Download button styling */
-        .stDownloadButton > button {{
-            background-color: {COLORS['accent_green']} !important;
-            border: none !important;
-            color: white !important;
-            border-radius: 0.375rem !important;
-            font-weight: 500 !important;
-        }}
-        
-        .stDownloadButton > button:hover {{
-            background-color: #6bc373 !important;
-        }}
-        
-        /* Primary action buttons */
-        .stButton[key*="generate"] > button,
-        .stButton[key*="ai"] > button {{
-            background-color: {COLORS['accent_coral']} !important;
-        }}
-        
-        .stButton[key*="generate"] > button:hover,
-        .stButton[key*="ai"] > button:hover {{
-            background-color: #e55a3a !important;
-        }}
-        
-        /* Section headers */
-        .section-header {{
-            background: linear-gradient(90deg, {COLORS['primary_blue']}, {COLORS['primary_teal']});
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 700;
-            font-size: 1.5rem;
-            margin: 1.5rem 0 1rem 0;
-        }}
-        
-        /* Sidebar improvements */
-        .css-1d391kg {{
-            background: linear-gradient(180deg, {COLORS['neutral_white']}, #f8f9fa);
-        }}
-        
-        /* Selectbox improvements */
-        .stSelectbox > div > div {{
-            border-radius: 0.375rem;
+        .calendar-day {{
+            aspect-ratio: 1;
             border: 1px solid {COLORS['neutral_light_gray']};
-            transition: border-color 0.2s ease;
-        }}
-        
-        .stSelectbox > div > div:focus-within {{
-            border-color: {COLORS['primary_blue']};
-            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.1);
-        }}
-        
-        /* Text input improvements */
-        .stTextInput > div > div > input {{
-            border-radius: 0.375rem;
-            border: 1px solid {COLORS['neutral_light_gray']};
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin: 2px;
+            text-align: center;
+            cursor: pointer;
             transition: all 0.2s ease;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }}
         
-        .stTextInput > div > div > input:focus {{
+        .calendar-day:hover {{
+            background-color: {COLORS['secondary_light_sky']};
+            transform: scale(1.02);
+        }}
+        
+        .appointment-available {{
+            background-color: rgba(119, 221, 119, 0.3);
+            border-color: {COLORS['accent_green']};
+        }}
+        
+        .appointment-reserved {{
+            background-color: rgba(91, 155, 211, 0.3);
             border-color: {COLORS['primary_blue']};
-            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.1);
         }}
         
-        /* Slider improvements */
-        .stSlider > div > div > div > div {{
-            background-color: {COLORS['primary_blue']};
+        .appointment-cancelled {{
+            background-color: rgba(255, 127, 80, 0.3);
+            border-color: {COLORS['accent_coral']};
         }}
         
-        /* Multiselect improvements */
+        /* Priority alert enhancements */
+        .priority-alert {{
+            background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+            color: white !important;
+            padding: 1rem !important;
+            border-radius: 0.75rem !important;
+            margin: 1rem 0 !important;
+            text-align: center !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+            border: none !important;
+            animation: pulse-alert 2s infinite !important;
+        }}
+        
+        @keyframes pulse-alert {{
+            0%, 100% {{ 
+                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), 0 0 0 0 rgba(220, 38, 38, 0.2); 
+            }}
+            50% {{ 
+                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), 0 0 0 10px rgba(220, 38, 38, 0); 
+            }}
+        }}
+        
+        /* Enhanced metrics */
+        .stMetric {{
+            background: {COLORS['neutral_white']} !important;
+            border: 1px solid {COLORS['neutral_light_gray']} !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+            transition: all 0.3s ease !important;
+            position: relative !important;
+        }}
+        
+        .stMetric:hover {{
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+        }}
+        
+        /* Category styling */
+        .category-emergent {{
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.05));
+            border-left: 4px solid #dc2626;
+            color: #7f1d1d;
+        }}
+        
+        .category-urgent {{
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05));
+            border-left: 4px solid #f59e0b;
+            color: #78350f;
+        }}
+        
+        .category-routine {{
+            background: linear-gradient(135deg, rgba(119, 221, 119, 0.1), rgba(107, 195, 115, 0.05));
+            border-left: 4px solid #77dd77;
+            color: #166534;
+        }}
+        
+        /* Form enhancements */
+        .stSelectbox > div > div,
         .stMultiSelect > div > div {{
-            border-radius: 0.375rem;
-            border: 1px solid {COLORS['neutral_light_gray']};
+            border-radius: 0.5rem !important;
+            border: 1px solid {COLORS['neutral_light_gray']} !important;
+            transition: all 0.2s ease !important;
         }}
         
-        /* Loading spinner customization */
-        .stSpinner > div {{
-            border-top-color: {COLORS['primary_blue']} !important;
+        .stSelectbox > div > div:focus-within,
+        .stMultiSelect > div > div:focus-within {{
+            border-color: {COLORS['primary_blue']} !important;
+            box-shadow: 0 0 0 3px rgba(91, 155, 211, 0.1) !important;
         }}
         
-        /* Success/error message improvements */
+        /* Treatment preference indicators */
+        .treatment-therapy {{
+            background: linear-gradient(135deg, rgba(62, 138, 126, 0.1), rgba(44, 107, 95, 0.05));
+            border-left: 4px solid {COLORS['primary_teal']};
+        }}
+        
+        .treatment-medication {{
+            background: linear-gradient(135deg, rgba(91, 155, 211, 0.1), rgba(59, 130, 246, 0.05));
+            border-left: 4px solid {COLORS['primary_blue']};
+        }}
+        
+        .treatment-both {{
+            background: linear-gradient(135deg, rgba(255, 127, 80, 0.1), rgba(229, 90, 58, 0.05));
+            border-left: 4px solid {COLORS['accent_coral']};
+        }}
+        
+        /* Hide unwanted elements */
+        .css-1rs6os, .css-17ziqus {{
+            visibility: hidden;
+        }}
+        
+        #MainMenu {{
+            visibility: hidden;
+        }}
+        
+        footer {{
+            visibility: hidden;
+        }}
+        
+        header {{
+            visibility: hidden;
+        }}
+        
+        /* Data table improvements */
+        .stDataFrame {{
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+            border: 1px solid {COLORS['neutral_light_gray']} !important;
+        }}
+        
+        /* Success/error messages */
         .stSuccess {{
-            background-color: {COLORS['accent_green']};
-            color: white;
-            border-radius: 0.375rem;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, {COLORS['accent_green']}, #6bc373) !important;
+            color: white !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
         }}
         
         .stError {{
-            background-color: {COLORS['accent_coral']};
-            color: white;
-            border-radius: 0.375rem;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }}
-        
-        .stInfo {{
-            background-color: {COLORS['primary_blue']};
-            color: white;
-            border-radius: 0.375rem;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+            color: white !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
         }}
         
         .stWarning {{
-            background-color: #f39c12;
-            color: white;
-            border-radius: 0.375rem;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: white !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
         }}
         
-        /* Metric card improvements - remove boxes */
-        .metric-card {{
-            background: transparent;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid {COLORS['primary_blue']};
-            margin: 0.5rem 0;
-            transition: transform 0.2s ease;
-        }}
-        
-        .metric-card:hover {{
-            transform: translateY(-2px);
-        }}
-        
-        /* Custom expander styling */
-        .streamlit-expanderHeader {{
-            border-radius: 0.375rem;
-            background-color: #f8f9fa;
-        }}
-        
-        /* Remove excessive shadows and boxes */
-        .element-container {{
-            background: transparent !important;
-        }}
-        
-        /* Checkbox styling */
-        .stCheckbox > label {{
-            font-weight: 500;
-            color: {COLORS['neutral_charcoal']};
-        }}
-        
-        /* Download button styling */
-        .stDownloadButton > button {{
-            background-color: {COLORS['accent_green']};
-            border-color: {COLORS['accent_green']};
-            color: white;
-        }}
-        
-        .stDownloadButton > button:hover {{
-            background-color: #6bc373;
-            border-color: #6bc373;
+        .stInfo {{
+            background: linear-gradient(135deg, {COLORS['primary_blue']}, {COLORS['primary_teal']}) !important;
+            color: white !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
         }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- AI Integration Functions (Fixed for Gemini API) ---
+# --- AI Integration Functions ---
 def call_gemini_api(prompt, model="gemini-1.5-flash"):
     """Call Gemini API with proper error handling"""
     try:
@@ -434,27 +513,26 @@ def call_gemini_api(prompt, model="gemini-1.5-flash"):
     except Exception as e:
         return f"Unexpected error: {str(e)}"
 
-def generate_ai_summary(data, summary_type="overview"):
+def generate_ai_summary(data, summary_type="all_patients"):
     """Generate AI summary using Gemini API"""
     try:
-        if summary_type == "overview":
-            critical_cases = len(data[data['Risk Level'].str.contains('Critical', na=False)])
-            high_cases = len(data[data['Risk Level'].str.contains('High', na=False)])
-            homeless_count = len(data[data['Housing Status'] == 'Homeless'])
+        if summary_type == "all_patients":
+            emergent_cases = len(data[data['VA Category'] == 'Emergent'])
+            urgent_cases = len(data[data['VA Category'] == 'Urgent'])
+            routine_cases = len(data[data['VA Category'] == 'Routine'])
             avg_phq9 = data['PHQ-9 Score'].mean()
             avg_gad7 = data['GAD-7 Score'].mean()
             
             prompt = f"""
-As a clinical psychologist specializing in veteran mental health, provide a professional clinical summary based on this veteran population data:
+As a clinical psychologist specializing in veteran mental health, provide a professional clinical summary based on this veteran patient data:
 
-POPULATION STATISTICS:
+PATIENT STATISTICS:
 - Total Veterans: {len(data)}
-- Critical Risk Cases: {critical_cases}
-- High Risk Cases: {high_cases}
-- Medium Risk Cases: {len(data[data['Risk Level'] == 'Medium'])}
-- Low Risk Cases: {len(data[data['Risk Level'] == 'Low'])}
+- Emergent Cases (Imminent Risk): {emergent_cases}
+- Urgent Cases (Same Day Eval): {urgent_cases}
+- Routine Referrals: {routine_cases}
 - Average Age: {data['Age'].mean():.1f} years
-- Homeless Veterans: {homeless_count}
+- Homeless Veterans: {len(data[data['Housing Status'] == 'Homeless'])}
 - Veterans with Low Social Support: {len(data[data['Social Support'] == 'Low'])}
 - High Substance Use Risk: {len(data[data['Substance Use Risk'] == 'High'])}
 
@@ -462,6 +540,11 @@ CLINICAL METRICS:
 - Average PHQ-9 Score: {avg_phq9:.1f} (Depression)
 - Average GAD-7 Score: {avg_gad7:.1f} (Anxiety)
 - Average PCL-5 Score: {data['PCL-5 Score'].mean():.1f} (PTSD)
+
+TREATMENT PREFERENCES:
+- Therapy Only: {len(data[data['Treatment Preference'] == 'Therapy'])}
+- Medication Only: {len(data[data['Treatment Preference'] == 'Medication'])}
+- Both Therapy & Medication: {len(data[data['Treatment Preference'] == 'Both'])}
 
 Please provide:
 1. Key clinical insights (2-3 sentences)
@@ -471,7 +554,7 @@ Please provide:
 Keep response professional and concise (under 200 words).
             """
         
-        elif summary_type == "individual":
+        elif summary_type == "individual_patient":
             veteran = data.iloc[0]
             prompt = f"""
 As a clinical psychologist, provide a comprehensive assessment for this veteran:
@@ -483,7 +566,8 @@ VETERAN PROFILE:
 - Military Branch: {veteran['Branch']}, Service Era: {veteran['Service Era']}
 
 RISK ASSESSMENT:
-- AI Risk Level: {veteran['Risk Level']} (Score: {veteran['Risk Score']})
+- VA Category: {veteran['VA Category']}
+- Risk Level: {veteran['Risk Level']} (Score: {veteran['Risk Score']})
 - C-SSRS Screen: {veteran['C-SSRS Screen']}
 - PHQ-9 Q9 Self-Harm: {veteran['PHQ-9 Q9 (Self-Harm)']}
 
@@ -496,13 +580,9 @@ SOCIAL DETERMINANTS:
 - Housing Status: {veteran['Housing Status']}
 - Social Support: {veteran['Social Support']}
 - Substance Use Risk: {veteran['Substance Use Risk']}
+- Treatment Preference: {veteran['Treatment Preference']}
 - Emergency Contact: {veteran['Emergency Contact']}
 - Transportation: {veteran['Transportation']}
-
-CLINICAL NOTES:
-- Priority Notes: {veteran.get('Priority Notes', 'None')}
-- Assigned Clinician: {veteran['Assigned Clinician']}
-- Last Contact: {veteran['Last Contact']}
 
 Please provide:
 1. Clinical risk assessment summary
@@ -519,10 +599,10 @@ Keep response professional and actionable (under 300 words).
         return f"Error generating AI summary: {str(e)}"
 
 def ask_ai_question(question, data_context):
-    """Ask AI questions about the veteran population data"""
+    """Ask AI questions about the veteran patient data"""
     try:
         prompt = f"""
-As a clinical expert in veteran mental health, answer this question based on the provided veteran population data:
+As a clinical expert in veteran mental health, answer this question based on the provided veteran patient data:
 
 QUESTION: {question}
 
@@ -542,63 +622,10 @@ Keep response concise and practical (under 200 words).
     except Exception as e:
         return f"Error processing question: {str(e)}"
 
-def ask_ai_individual_question(question, veteran_data):
-    """Ask AI questions about a specific veteran"""
-    try:
-        veteran = veteran_data.iloc[0]
-        prompt = f"""
-As a clinical psychologist specializing in veteran mental health, answer this question about a specific veteran:
-
-QUESTION: {question}
-
-VETERAN PROFILE:
-- ID: {veteran['Veteran ID']}
-- Name: {veteran.get('Name', 'Not provided')}
-- Age: {veteran['Age']}, Gender: {veteran['Gender']}
-- Military Background: {veteran['Branch']}, {veteran['Service Era']}
-- Risk Level: {veteran['Risk Level']} (Score: {veteran['Risk Score']})
-
-CLINICAL ASSESSMENTS:
-- C-SSRS Screen: {veteran['C-SSRS Screen']}
-- PHQ-9 Q9 Self-Harm: {veteran['PHQ-9 Q9 (Self-Harm)']}
-- PHQ-9 Depression Score: {veteran['PHQ-9 Score']}/27
-- GAD-7 Anxiety Score: {veteran['GAD-7 Score']}/21
-- PCL-5 PTSD Score: {veteran['PCL-5 Score']}/80
-
-SOCIAL FACTORS:
-- Housing Status: {veteran['Housing Status']}
-- Social Support: {veteran['Social Support']}
-- Substance Use Risk: {veteran['Substance Use Risk']}
-- Emergency Contact: {veteran['Emergency Contact']}
-- Transportation: {veteran['Transportation']}
-- Previous Mental Health Treatment: {veteran['Previous Mental Health Treatment']}
-
-CLINICAL NOTES:
-- Priority Notes: {veteran.get('Priority Notes', 'None')}
-- Assigned Clinician: {veteran['Assigned Clinician']}
-- Last Contact: {veteran['Last Contact']}
-- Contact Method: {veteran['Contact Method']}
-
-Please provide a professional, clinical response that:
-1. Directly addresses the question about this specific veteran
-2. References relevant assessment scores and risk factors
-3. Considers the veteran's unique circumstances
-4. Provides actionable clinical recommendations when appropriate
-5. Uses professional medical terminology
-
-Keep response focused and practical (under 250 words).
-        """
-        
-        return call_gemini_api(prompt, "gemini-1.5-flash")
-        
-    except Exception as e:
-        return f"Error processing individual question: {str(e)}"
-
 # --- Enhanced Synthetic Data Generation ---
 @st.cache_data
 def generate_synthetic_data(num_records=100):
     """Generate consistent synthetic veteran mental health data"""
-    # Fixed seed for consistent dataset
     random.seed(42)
     np.random.seed(42)
     
@@ -607,14 +634,12 @@ def generate_synthetic_data(num_records=100):
         'Negative', 'Positive - Passive Ideation', 'Positive - Active Ideation', 'Positive - Recent Behavior'
     ]
     
-    # Realistic veteran names for more authentic feel
     first_names = ['James', 'Michael', 'Robert', 'John', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Christopher',
                    'Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen']
     last_names = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
                   'Anderson', 'Taylor', 'Thomas', 'Hernandez', 'Moore', 'Martin', 'Jackson', 'Thompson', 'White', 'Lopez']
     
     for i in range(num_records):
-        # Generate realistic risk distribution
         c_ssrs_status = random.choices(c_ssrs_options, weights=[0.78, 0.14, 0.06, 0.02], k=1)[0]
         phq9_q9_suicide = "No"
         
@@ -634,18 +659,16 @@ def generate_synthetic_data(num_records=100):
             gad7_score = random.randint(6, 16)
             pcl5_score = random.randint(25, 55)
             phq9_q9_suicide = random.choices(["Yes", "No"], weights=[0.4, 0.6], k=1)[0]
-        else:  # Negative C-SSRS
+        else:
             phq9_score = random.randint(0, 16)
             gad7_score = random.randint(0, 12)
             pcl5_score = random.randint(0, 45)
             if phq9_score > 12:
                 phq9_q9_suicide = random.choices(["Yes", "No"], weights=[0.1, 0.9], k=1)[0]
 
-        # Generate realistic demographic and clinical data
         age = random.randint(22, 75)
         gender = random.choices(["Male", "Female", "Other"], weights=[0.85, 0.14, 0.01], k=1)[0]
         
-        # Realistic service era distribution
         if age > 65:
             service_era = "Vietnam"
         elif age > 50:
@@ -672,6 +695,7 @@ def generate_synthetic_data(num_records=100):
             "Substance Use Risk": random.choices(["Low", "Medium", "High"], weights=[0.5, 0.35, 0.15], k=1)[0],
             "Housing Status": random.choices(["Stable", "At Risk", "Homeless"], weights=[0.75, 0.18, 0.07], k=1)[0],
             "Previous Mental Health Treatment": random.choices(["Yes", "No"], weights=[0.65, 0.35], k=1)[0],
+            "Treatment Preference": random.choices(["Therapy", "Medication", "Both"], weights=[0.35, 0.25, 0.4], k=1)[0],
             "Last Contact": (datetime.now() - timedelta(days=random.randint(0, 7))).strftime("%Y-%m-%d"),
             "Assigned Clinician": random.choice(["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Davis", "Unassigned"]),
             "Priority Notes": random.choice(["", "Family concerns", "Recent hospitalization", "Employment issues", 
@@ -685,8 +709,28 @@ def generate_synthetic_data(num_records=100):
         
     return pd.DataFrame(data)
 
-# --- Risk Scoring Logic ---
-def calculate_risk_score(row):
+# --- VA-Compliant Risk Scoring Logic ---
+def calculate_va_category_and_risk(row):
+    """Calculate VA Category and Risk Score based on official VA guidelines"""
+    
+    # EMERGENT: Imminent risk of suicide or harm to self or others
+    if (row["C-SSRS Screen"] == 'Positive - Recent Behavior' or 
+        (row["C-SSRS Screen"] == 'Positive - Active Ideation' and row["PHQ-9 Q9 (Self-Harm)"] == "Yes")):
+        return "Emergent", 6, "EMERGENT - Imminent risk of suicide or harm. Requires immediate crisis response."
+    
+    # URGENT: Same day evaluation or care needed
+    if (row["C-SSRS Screen"] in ['Positive - Active Ideation', 'Positive - Passive Ideation'] or
+        row["PHQ-9 Q9 (Self-Harm)"] == "Yes" or
+        row["PHQ-9 Score"] >= 20 or 
+        row["GAD-7 Score"] >= 15 or 
+        row["PCL-5 Score"] >= 55):
+        return "Urgent", 4, "URGENT - Same day mental health evaluation required."
+    
+    # ROUTINE: Needs timely care but not at imminent risk
+    return "Routine", 2, "ROUTINE - Timely mental health care needed, but not at imminent risk."
+
+def calculate_detailed_risk_score(row):
+    """Calculate detailed risk score for internal prioritization"""
     score = 0
     explanation = []
 
@@ -741,71 +785,212 @@ def calculate_risk_score(row):
     }
     return score, risk_levels[score], ". ".join(explanation) + "."
 
-# --- UI Styling Functions ---
-def style_risk_levels(df):
-    def highlight_row(row):
-        level = row['Risk Level']
-        if 'Critical' in level:
-            color = COLORS['accent_coral']
-            text_color = COLORS['neutral_white']
-        elif 'High' in level:
-            color = COLORS['secondary_sandstone']
-            text_color = COLORS['neutral_charcoal']
-        elif 'Medium' in level:
-            color = COLORS['secondary_light_sky']
-            text_color = COLORS['neutral_charcoal']
-        else:
-            color = 'transparent'
-            text_color = COLORS['neutral_charcoal']
-        return [f'background-color: {color}; color: {text_color}'] * len(row)
-    return df.style.apply(highlight_row, axis=1)
+# --- Button Response Functions ---
+def handle_button_click(button_type, veteran_id=None, context=""):
+    """Handle various button clicks with appropriate responses"""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    
+    responses = {
+        "review": f"📋 Review initiated for {veteran_id or 'selected veteran'} at {timestamp}. Opening clinical assessment interface.",
+        "contact": f"📞 Contact preparation for {veteran_id or 'selected veteran'}. Gathering contact information and communication preferences.",
+        "crisis": f"🚨 CRISIS INTERVENTION activated for {veteran_id or 'selected veteran'} at {timestamp}. Emergency protocols initiated.",
+        "schedule": f"📅 Scheduling appointment for {veteran_id or 'selected veteran'}. Checking clinician availability for urgent placement.",
+        "update_assessment": f"📝 Assessment update form opened. Ready to input new clinical data and observations.",
+        "prep_contact": f"📞 Contact information prepared. Phone: Primary contact method. Email: Secondary. Last successful contact: Recent.",
+        "schedule_appt": f"📅 Appointment scheduling system accessed. Available slots identified based on urgency level.",
+        "generate_referral": f"📧 Referral documentation generated. Specialist recommendations based on assessment scores."
+    }
+    
+    response = responses.get(button_type, f"✅ Action '{button_type}' completed successfully at {timestamp}.")
+    
+    # Store response in session state
+    if 'button_responses' not in st.session_state:
+        st.session_state.button_responses = {}
+    
+    key = f"{button_type}_{veteran_id}_{timestamp}"
+    st.session_state.button_responses[key] = response
+    
+    return response
+
+# --- Calendar Functions ---
+def create_calendar_view(appointments, year, month):
+    """Create a calendar view for appointments"""
+    cal = calendar.monthcalendar(year, month)
+    month_name = calendar.month_name[month]
+    
+    st.subheader(f"📅 Appointment Calendar - {month_name} {year}")
+    
+    # Calendar navigation
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        if st.button("◀ Previous"):
+            if month == 1:
+                st.session_state.calendar_view = datetime(year - 1, 12, 1)
+            else:
+                st.session_state.calendar_view = datetime(year, month - 1, 1)
+            st.rerun()
+    
+    with col2:
+        st.markdown(f"<div style='text-align: center; font-size: 1.2rem; font-weight: 600;'>{month_name} {year}</div>", unsafe_allow_html=True)
+    
+    with col3:
+        if st.button("Next ▶"):
+            if month == 12:
+                st.session_state.calendar_view = datetime(year + 1, 1, 1)
+            else:
+                st.session_state.calendar_view = datetime(year, month + 1, 1)
+            st.rerun()
+    
+    # Calendar header
+    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    cols = st.columns(7)
+    for i, day in enumerate(days):
+        with cols[i]:
+            st.markdown(f"<div style='text-align: center; font-weight: 600; padding: 0.5rem;'>{day}</div>", unsafe_allow_html=True)
+    
+    # Calendar body
+    for week in cal:
+        cols = st.columns(7)
+        for i, day in enumerate(week):
+            with cols[i]:
+                if day == 0:
+                    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+                else:
+                    date_obj = datetime(year, month, day).date()
+                    day_appointments = [apt for apt in appointments if apt['date'] == date_obj]
+                    
+                    # Count appointments by status
+                    available_count = len([apt for apt in day_appointments if apt['status'] == 'available'])
+                    reserved_count = len([apt for apt in day_appointments if apt['status'] == 'reserved'])
+                    cancelled_count = len([apt for apt in day_appointments if apt['status'] == 'cancelled'])
+                    
+                    # Determine day style based on appointments
+                    if reserved_count > 0:
+                        day_class = "appointment-reserved"
+                    elif available_count > 0:
+                        day_class = "appointment-available"
+                    elif cancelled_count > 0:
+                        day_class = "appointment-cancelled"
+                    else:
+                        day_class = ""
+                    
+                    appointment_info = ""
+                    if available_count > 0:
+                        appointment_info += f"🟢 {available_count} available<br>"
+                    if reserved_count > 0:
+                        appointment_info += f"🔵 {reserved_count} reserved<br>"
+                    if cancelled_count > 0:
+                        appointment_info += f"🔴 {cancelled_count} cancelled"
+                    
+                    st.markdown(f"""
+                    <div class="calendar-day {day_class}" title="Click for details">
+                        <div style="font-weight: 600; font-size: 1.1rem;">{day}</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.25rem;">
+                            {appointment_info}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Show appointment details when day is clicked
+                    if day_appointments and st.button(f"View {day}", key=f"day_{day}", help="View appointments for this day"):
+                        st.session_state[f"show_day_{day}"] = True
+                    
+                    if st.session_state.get(f"show_day_{day}", False):
+                        with st.expander(f"Appointments for {month_name} {day}", expanded=True):
+                            for apt in sorted(day_appointments, key=lambda x: x['time']):
+                                status_color = {"available": "🟢", "reserved": "🔵", "cancelled": "🔴"}[apt['status']]
+                                time_str = apt['time'].strftime("%H:%M")
+                                
+                                if apt['status'] == 'reserved':
+                                    st.markdown(f"{status_color} **{time_str}** - {apt['veteran_id']} with {apt['clinician']} ({apt['type']})")
+                                else:
+                                    st.markdown(f"{status_color} **{time_str}** - {apt['status'].title()} slot")
 
 # --- Enhanced Visualization Functions ---
-def create_risk_distribution_chart(df):
-    risk_counts = df['Risk Level'].value_counts()
+def create_va_category_chart(df):
+    """Create VA Category distribution chart"""
+    category_counts = df['VA Category'].value_counts()
     
     color_map = {
-        'Critical - Behavior': COLORS['accent_coral'],
-        'Critical - Ideation': COLORS['accent_coral'],
-        'High - Self-Harm Flag': COLORS['secondary_sandstone'],
-        'High - Symptom Severity': COLORS['secondary_sandstone'],
-        'Medium': COLORS['primary_blue'],
-        'Low': COLORS['accent_green']
+        'Emergent': '#dc2626',
+        'Urgent': '#f59e0b', 
+        'Routine': '#77dd77'
     }
     
     fig = px.bar(
-        x=risk_counts.index, 
-        y=risk_counts.values,
-        color=risk_counts.index,
+        x=category_counts.index, 
+        y=category_counts.values,
+        color=category_counts.index,
         color_discrete_map=color_map,
-        title="Risk Level Distribution",
-        labels={'x': 'Risk Level', 'y': 'Number of Veterans'}
+        title="VA Triage Category Distribution",
+        labels={'x': 'VA Category', 'y': 'Number of Veterans'}
     )
+    
     fig.update_layout(
         showlegend=False,
         height=400,
         title={
-            'text': "Risk Level Distribution",
+            'text': "VA Triage Category Distribution",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 18, 'family': "Segoe UI", 'color': COLORS['neutral_charcoal']}
+            'font': {'size': 18, 'family': "Inter", 'color': COLORS['neutral_charcoal']}
         },
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         xaxis={
-            'title': {'text': 'Risk Level', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
-            'tickangle': 45,
+            'title': {'text': 'VA Category', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
             'tickfont': {'size': 12, 'color': COLORS['neutral_charcoal']}
         },
         yaxis={
             'title': {'text': 'Number of Veterans', 'font': {'size': 14, 'color': COLORS['neutral_charcoal']}},
             'tickfont': {'size': 12, 'color': COLORS['neutral_charcoal']}
         },
-        margin=dict(t=60, b=80, l=60, r=20)
+        margin=dict(t=60, b=60, l=60, r=20)
+    )
+    return fig
+
+def create_treatment_preference_chart(df):
+    """Create treatment preference distribution chart"""
+    treatment_counts = df['Treatment Preference'].value_counts()
+    
+    color_map = {
+        'Therapy': COLORS['primary_teal'],
+        'Medication': COLORS['primary_blue'],
+        'Both': COLORS['accent_coral']
+    }
+    
+    fig = px.pie(
+        values=treatment_counts.values,
+        names=treatment_counts.index,
+        title="Treatment Preference Distribution",
+        color_discrete_map=color_map
+    )
+    
+    fig.update_layout(
+        height=400,
+        title={
+            'text': "Treatment Preference Distribution",
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 18, 'family': "Inter", 'color': COLORS['neutral_charcoal']}
+        },
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font={'size': 12, 'color': COLORS['neutral_charcoal']},
+        legend={
+            'orientation': 'v',
+            'yanchor': 'middle',
+            'y': 0.5,
+            'xanchor': 'left',
+            'x': 1.05,
+            'font': {'size': 11}
+        },
+        margin=dict(t=60, b=20, l=20, r=120)
     )
     return fig
 
 def create_intake_timeline(df):
+    """Create intake timeline chart"""
     df['Intake Date'] = pd.to_datetime(df['Intake Date'])
     daily_intakes = df.groupby(df['Intake Date'].dt.date).size().reset_index()
     daily_intakes.columns = ['Date', 'Count']
@@ -829,7 +1014,7 @@ def create_intake_timeline(df):
             'text': "Daily Intake Volume (Last 30 Days)",
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 18, 'family': "Segoe UI", 'color': COLORS['neutral_charcoal']}
+            'font': {'size': 18, 'family': "Inter", 'color': COLORS['neutral_charcoal']}
         },
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
@@ -845,82 +1030,27 @@ def create_intake_timeline(df):
     )
     return fig
 
-def create_clinician_workload_chart(df):
-    workload = df['Assigned Clinician'].value_counts()
-    
-    # Use consistent color palette
-    colors = [COLORS['primary_blue'], COLORS['primary_teal'], COLORS['accent_coral'], 
-              COLORS['accent_green'], COLORS['secondary_sandstone'], COLORS['neutral_medium_gray']]
-    
-    fig = px.pie(
-        values=workload.values,
-        names=workload.index,
-        title="Clinician Workload Distribution",
-        color_discrete_sequence=colors
-    )
-    fig.update_layout(
-        height=400,
-        title={
-            'text': "Clinician Workload Distribution",
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 18, 'family': "Segoe UI", 'color': COLORS['neutral_charcoal']}
-        },
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font={'size': 12, 'color': COLORS['neutral_charcoal']},
-        legend={
-            'orientation': 'v',
-            'yanchor': 'middle',
-            'y': 0.5,
-            'xanchor': 'left',
-            'x': 1.05,
-            'font': {'size': 11}
-        },
-        margin=dict(t=60, b=20, l=20, r=120)
-    )
-    fig.update_traces(
-        textposition='inside',
-        textinfo='percent+label',
-        textfont_size=11,
-        marker_line=dict(color='white', width=2)
-    )
-    return fig
-
-# --- Export Functions ---
-def export_data_with_summary(df_filtered, summary_text):
-    """Export data with AI summary"""
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    
-    # Create summary report
-    report = f"""
-TRIAGEVIEW VETERAN MENTAL HEALTH REPORT
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-===========================================
-
-AI CLINICAL SUMMARY:
-{summary_text}
-
-STATISTICS:
-- Total Veterans: {len(df_filtered)}
-- Critical Risk: {len(df_filtered[df_filtered['Risk Level'].str.contains('Critical', na=False)])}
-- High Risk: {len(df_filtered[df_filtered['Risk Level'].str.contains('High', na=False)])}
-- Medium Risk: {len(df_filtered[df_filtered['Risk Level'] == 'Medium'])}
-- Low Risk: {len(df_filtered[df_filtered['Risk Level'] == 'Low'])}
-
-===========================================
-DETAILED DATA FOLLOWS BELOW:
-
-"""
-    
-    csv_data = df_filtered.to_csv(index=False)
-    return report + "\n" + csv_data
+# --- Enhanced UI Styling Functions ---
+def style_veterans_table(df):
+    """Style the veterans table based on VA categories"""
+    def highlight_row(row):
+        category = row['VA Category']
+        if category == 'Emergent':
+            return ['background-color: rgba(220, 38, 38, 0.1); color: #7f1d1d'] * len(row)
+        elif category == 'Urgent':
+            return ['background-color: rgba(245, 158, 11, 0.1); color: #78350f'] * len(row)
+        elif category == 'Routine':
+            return ['background-color: rgba(119, 221, 119, 0.1); color: #166534'] * len(row)
+        else:
+            return [''] * len(row)
+    return df.style.apply(highlight_row, axis=1)
 
 # --- Reset Filters Function ---
 def reset_all_filters():
+    """Reset all filter states"""
     filter_keys = [
-        'c_ssrs_filter', 'risk_level_filter', 'gender_filter', 'branch_filter',
-        'clinician_filter', 'phq9_slider', 'gad7_slider', 'pcl5_slider',
+        'c_ssrs_filter', 'va_category_filter', 'risk_level_filter', 'gender_filter', 'branch_filter',
+        'clinician_filter', 'phq9_slider', 'gad7_slider', 'pcl5_slider', 'treatment_preference_filter',
         'age_slider', 'date_filter', 'housing_filter', 'substance_filter',
         'social_support_filter', 'contact_method_filter'
     ]
@@ -932,96 +1062,132 @@ def reset_all_filters():
     st.session_state.filter_reset_counter += 1
     st.session_state.reset_filters = True
 
+# --- Export Functions ---
+def export_data_with_summary(df_filtered, summary_text):
+    """Export data with AI summary"""
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    report = f"""
+TRIAGEVIEW VETERAN MENTAL HEALTH REPORT
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+===========================================
+
+AI CLINICAL SUMMARY:
+{summary_text}
+
+VA CATEGORY STATISTICS:
+- Total Veterans: {len(df_filtered)}
+- Emergent (Imminent Risk): {len(df_filtered[df_filtered['VA Category'] == 'Emergent'])}
+- Urgent (Same Day Eval): {len(df_filtered[df_filtered['VA Category'] == 'Urgent'])}
+- Routine (Timely Care): {len(df_filtered[df_filtered['VA Category'] == 'Routine'])}
+
+TREATMENT PREFERENCES:
+- Therapy Only: {len(df_filtered[df_filtered['Treatment Preference'] == 'Therapy'])}
+- Medication Only: {len(df_filtered[df_filtered['Treatment Preference'] == 'Medication'])}
+- Both Therapy & Medication: {len(df_filtered[df_filtered['Treatment Preference'] == 'Both'])}
+
+===========================================
+DETAILED DATA FOLLOWS BELOW:
+
+"""
+    
+    csv_data = df_filtered.to_csv(index=False)
+    return report + "\n" + csv_data
+
 # --- Main Application ---
 def main():
     initialize_session_state()
-    load_css()
+    load_enhanced_css()
     
     # Generate consistent dataset
     df = generate_synthetic_data()
     
-    # Apply risk scoring
-    risk_info = df.apply(calculate_risk_score, axis=1, result_type='expand')
+    # Apply VA category and risk scoring
+    va_info = df.apply(calculate_va_category_and_risk, axis=1, result_type='expand')
+    df[['VA Category', 'VA Risk Score', 'VA Explanation']] = va_info
+    
+    risk_info = df.apply(calculate_detailed_risk_score, axis=1, result_type='expand')
     df[['Risk Score', 'Risk Level', 'Risk Explanation']] = risk_info
-    df = df.sort_values(by="Risk Score", ascending=False).reset_index(drop=True)
+    
+    # Sort by VA Category priority, then by Risk Score
+    category_order = {'Emergent': 3, 'Urgent': 2, 'Routine': 1}
+    df['Category Order'] = df['VA Category'].map(category_order)
+    df = df.sort_values(by=['Category Order', 'Risk Score'], ascending=[False, False]).reset_index(drop=True)
+    df = df.drop('Category Order', axis=1)
 
     # --- Header ---
     st.title("🏥 TriageView: Veteran Mental Health Dashboard")
     st.markdown("*Advanced AI-powered clinical decision support for veteran mental health triage*")
 
-    # Critical cases alert
-    critical_cases = len(df[df['Risk Level'].str.contains('Critical', na=False)])
-    if critical_cases > 0:
+    # Enhanced alert for emergent cases
+    emergent_cases = len(df[df['VA Category'] == 'Emergent'])
+    urgent_cases = len(df[df['VA Category'] == 'Urgent'])
+    
+    if emergent_cases > 0:
         st.markdown(f"""
         <div class="priority-alert">
-        🚨 PRIORITY ALERT: {critical_cases} veteran(s) require immediate intervention
+        🚨 EMERGENT ALERT: {emergent_cases} veteran(s) at imminent risk require immediate crisis intervention
         </div>
         """, unsafe_allow_html=True)
+    elif urgent_cases > 0:
+        st.warning(f"⚠️ URGENT: {urgent_cases} veteran(s) require same-day evaluation")
 
     # --- AI Summary Section ---
     st.header("🤖 AI Clinical Overview")
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        if st.button("🧠 Generate AI Population Summary", key="generate_summary", type="primary"):
-            with st.spinner("🤖 Generating AI clinical summary..."):
-                summary = generate_ai_summary(df, "overview")
-                st.session_state.ai_summaries['overview'] = summary
+        if st.button("🧠 Generate AI Summary for All Patients", key="generate_summary", type="primary"):
+            with st.spinner("🤖 Generating AI clinical summary for all patients..."):
+                summary = generate_ai_summary(df, "all_patients")
+                st.session_state.ai_summaries['all_patients'] = summary
                 
-                # Show success/error status
                 if "Error" not in summary and "API Error" not in summary:
-                    st.markdown("""
-                    <div class="ai-status-success">
-                    ✅ AI Summary Generated Successfully
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.success("✅ AI Summary Generated Successfully")
                 else:
-                    st.markdown("""
-                    <div class="ai-status-error">
-                    ❌ AI Summary Generation Failed
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.error("❌ AI Summary Generation Failed")
         
-        if 'overview' in st.session_state.ai_summaries:
-            summary_text = st.session_state.ai_summaries['overview']
+        if 'all_patients' in st.session_state.ai_summaries:
+            summary_text = st.session_state.ai_summaries['all_patients']
             st.markdown(f"""
-            <div class="ai-summary-box">
-            <h4>🎯 AI Clinical Population Insights</h4>
+            <div class="ai-summary-all-patients">
+            <h4>🎯 AI Clinical Insights - All Patients</h4>
             <p>{summary_text}</p>
             </div>
             """, unsafe_allow_html=True)
     
     with col2:
-        # AI Q&A Section
-        st.subheader("💬 Ask AI About Population")
+        st.subheader("💬 Ask AI About All Patients")
         question = st.text_input("Ask clinical question:", placeholder="e.g., What are the main risk factors?")
         if st.button("🤖 Ask AI", key="ask_ai") and question:
             with st.spinner("🤖 Processing question..."):
-                critical_count = len(df[df['Risk Level'].str.contains('Critical', na=False)])
-                high_count = len(df[df['Risk Level'].str.contains('High', na=False)])
+                emergent_count = len(df[df['VA Category'] == 'Emergent'])
+                urgent_count = len(df[df['VA Category'] == 'Urgent'])
+                routine_count = len(df[df['VA Category'] == 'Routine'])
+                
                 context = f"""
-                Population Overview:
+                All Patients Overview:
                 - Total Veterans: {len(df)}
-                - Critical Risk: {critical_count}
-                - High Risk: {high_count}
+                - Emergent Cases: {emergent_count}
+                - Urgent Cases: {urgent_count}
+                - Routine Cases: {routine_count}
                 - Average Age: {df['Age'].mean():.1f}
                 - Homeless: {len(df[df['Housing Status'] == 'Homeless'])}
                 - Low Social Support: {len(df[df['Social Support'] == 'Low'])}
                 - High Substance Risk: {len(df[df['Substance Use Risk'] == 'High'])}
                 - Average PHQ-9: {df['PHQ-9 Score'].mean():.1f}
                 - Average GAD-7: {df['GAD-7 Score'].mean():.1f}
+                - Treatment Preferences - Therapy: {len(df[df['Treatment Preference'] == 'Therapy'])}, Medication: {len(df[df['Treatment Preference'] == 'Medication'])}, Both: {len(df[df['Treatment Preference'] == 'Both'])}
                 """
                 answer = ask_ai_question(question, context)
                 
-                # Display answer with status indicator
                 if "Error" not in answer and "API Error" not in answer:
                     st.success("🤖 AI Response:")
                     st.info(answer)
                 else:
                     st.error("❌ AI service unavailable. Please try again.")
-                    st.warning(answer)
 
-    # --- Sidebar Filters ---
+    # --- Enhanced Sidebar Filters ---
     st.sidebar.header("🔍 Advanced Filtering")
     
     if st.sidebar.button("🔄 Reset All Filters", key=f"reset_button_{st.session_state.filter_reset_counter}"):
@@ -1029,32 +1195,31 @@ def main():
         st.sidebar.success("✅ Filters Reset!")
         st.rerun()
     
-    # Get unique values and set defaults
+    # Get unique values for filters
+    va_categories = sorted(df["VA Category"].unique(), key=lambda x: ['Emergent', 'Urgent', 'Routine'].index(x))
     c_ssrs_unique = sorted(df["C-SSRS Screen"].unique())
     risk_level_unique = sorted(df["Risk Level"].unique(), key=lambda x: (
         0 if "Critical" in x else 1 if "High" in x else 2 if "Medium" in x else 3
     ))
     
     # Default values
-    if st.session_state.reset_filters:
-        defaults = {
-            'c_ssrs': c_ssrs_unique,
-            'risk_level': risk_level_unique,
-            'gender': sorted(df["Gender"].unique()),
-            'branch': sorted(df["Branch"].unique()),
-            'clinician': sorted(df["Assigned Clinician"].unique()),
-        }
-        st.session_state.reset_filters = False
-    else:
-        defaults = {
-            'c_ssrs': c_ssrs_unique,
-            'risk_level': risk_level_unique,
-            'gender': sorted(df["Gender"].unique()),
-            'branch': sorted(df["Branch"].unique()),
-            'clinician': sorted(df["Assigned Clinician"].unique()),
-        }
+    defaults = {
+        'va_category': va_categories,
+        'c_ssrs': c_ssrs_unique,
+        'risk_level': risk_level_unique,
+        'gender': sorted(df["Gender"].unique()),
+        'branch': sorted(df["Branch"].unique()),
+        'clinician': sorted(df["Assigned Clinician"].unique()),
+        'treatment_preference': sorted(df["Treatment Preference"].unique())
+    }
     
-    # Filters with unique keys
+    # Enhanced filters
+    va_category_filter = st.sidebar.multiselect(
+        "VA Triage Category", va_categories, defaults['va_category'],
+        key=f"va_category_filter_{st.session_state.filter_reset_counter}",
+        help="Official VA triage categories: Emergent (imminent risk), Urgent (same day eval), Routine (timely care)"
+    )
+    
     c_ssrs_filter = st.sidebar.multiselect(
         "C-SSRS Status", c_ssrs_unique, defaults['c_ssrs'],
         key=f"c_ssrs_filter_{st.session_state.filter_reset_counter}"
@@ -1063,6 +1228,13 @@ def main():
     risk_level_filter = st.sidebar.multiselect(
         "Risk Level", risk_level_unique, defaults['risk_level'],
         key=f"risk_level_filter_{st.session_state.filter_reset_counter}"
+    )
+    
+    # New Treatment Preference Filter
+    treatment_preference_filter = st.sidebar.multiselect(
+        "Treatment Preference", sorted(df["Treatment Preference"].unique()), defaults['treatment_preference'],
+        key=f"treatment_preference_filter_{st.session_state.filter_reset_counter}",
+        help="Filter by veteran's preferred treatment modality"
     )
     
     gender_filter = st.sidebar.multiselect(
@@ -1089,10 +1261,14 @@ def main():
     # --- Apply Filters ---
     df_filtered = df.copy()
     
+    if va_category_filter:
+        df_filtered = df_filtered[df_filtered["VA Category"].isin(va_category_filter)]
     if c_ssrs_filter:
         df_filtered = df_filtered[df_filtered["C-SSRS Screen"].isin(c_ssrs_filter)]
     if risk_level_filter:
         df_filtered = df_filtered[df_filtered["Risk Level"].isin(risk_level_filter)]
+    if treatment_preference_filter:
+        df_filtered = df_filtered[df_filtered["Treatment Preference"].isin(treatment_preference_filter)]
     if gender_filter:
         df_filtered = df_filtered[df_filtered["Gender"].isin(gender_filter)]
     if clinician_filter:
@@ -1108,59 +1284,57 @@ def main():
     # --- Analytics Overview ---
     st.header("📊 Analytics Overview")
     
-    # Simple, clean chart layout without unnecessary containers
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     
     with col1:
         if not df_filtered.empty:
-            fig1 = create_risk_distribution_chart(df_filtered)
+            fig1 = create_va_category_chart(df_filtered)
             st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False})
         else:
-            st.info("No data available for risk distribution chart.")
+            st.info("No data available for VA category chart.")
     
     with col2:
         if not df_filtered.empty:
-            fig2 = create_intake_timeline(df_filtered)
+            fig2 = create_treatment_preference_chart(df_filtered)
             st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
         else:
-            st.info("No data available for intake timeline.")
+            st.info("No data available for treatment preference chart.")
     
     with col3:
         if not df_filtered.empty:
-            fig3 = create_clinician_workload_chart(df_filtered)
+            fig3 = create_intake_timeline(df_filtered)
             st.plotly_chart(fig3, use_container_width=True, config={'displayModeBar': False})
         else:
-            st.info("No data available for clinician workload.")
+            st.info("No data available for intake timeline.")
 
     # --- Key Metrics Dashboard ---
     st.header("📈 Key Performance Indicators")
     
-    # Clean metrics without excessive styling
     col1, col2, col3, col4, col5, col6 = st.columns(6, gap="small")
     
     with col1:
-        critical_count = len(df_filtered[df_filtered['Risk Level'].str.contains('Critical', na=False)])
-        st.metric("🚨 Critical", critical_count, help="Veterans requiring immediate intervention")
+        emergent_count = len(df_filtered[df_filtered['VA Category'] == 'Emergent'])
+        st.metric("🚨 Emergent", emergent_count, help="Veterans at imminent risk requiring immediate crisis intervention")
     
     with col2:
-        high_count = len(df_filtered[df_filtered['Risk Level'].str.contains('High', na=False)])
-        st.metric("⚠️ High Risk", high_count, help="Veterans requiring urgent attention")
+        urgent_count = len(df_filtered[df_filtered['VA Category'] == 'Urgent'])
+        st.metric("⚠️ Urgent", urgent_count, help="Veterans requiring same-day evaluation or care")
     
     with col3:
-        medium_count = len(df_filtered[df_filtered['Risk Level'] == 'Medium'])
-        st.metric("🔶 Medium", medium_count, help="Veterans requiring regular monitoring")
+        routine_count = len(df_filtered[df_filtered['VA Category'] == 'Routine'])
+        st.metric("📋 Routine", routine_count, help="Veterans needing timely care but not at imminent risk")
     
     with col4:
-        low_count = len(df_filtered[df_filtered['Risk Level'] == 'Low'])
-        st.metric("🟢 Low Risk", low_count, help="Veterans with minimal risk factors")
+        therapy_count = len(df_filtered[df_filtered['Treatment Preference'] == 'Therapy'])
+        st.metric("🗣️ Therapy", therapy_count, help="Veterans preferring therapy-only treatment")
     
     with col5:
-        unassigned_count = len(df_filtered[df_filtered['Assigned Clinician'] == 'Unassigned'])
-        st.metric("👥 Unassigned", unassigned_count, help="Veterans awaiting clinician assignment")
+        medication_count = len(df_filtered[df_filtered['Treatment Preference'] == 'Medication'])
+        st.metric("💊 Medication", medication_count, help="Veterans preferring medication-only treatment")
     
     with col6:
-        avg_age = df_filtered['Age'].mean() if not df_filtered.empty else 0
-        st.metric("👤 Avg Age", f"{avg_age:.1f}", help="Average age of veterans in current view")
+        both_count = len(df_filtered[df_filtered['Treatment Preference'] == 'Both'])
+        st.metric("🔄 Both", both_count, help="Veterans preferring both therapy and medication")
 
     # Additional clinical metrics
     if not df_filtered.empty:
@@ -1190,25 +1364,56 @@ def main():
             st.metric("📊 Avg PHQ-9", f"{avg_phq9:.1f}",
                      help="Average depression severity score")
 
+    # --- Appointment Calendar ---
+    st.header("📅 Appointment Calendar")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        current_date = st.session_state.calendar_view
+        create_calendar_view(st.session_state.appointments, current_date.year, current_date.month)
+    
+    with col2:
+        st.subheader("📊 Calendar Legend")
+        st.markdown("""
+        <div style="padding: 1rem; background: white; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="margin-bottom: 0.5rem;"><span style="color: #77dd77;">🟢</span> Available slots</div>
+        <div style="margin-bottom: 0.5rem;"><span style="color: #5B9BD3;">🔵</span> Reserved appointments</div>
+        <div style="margin-bottom: 0.5rem;"><span style="color: #FF7F50;">🔴</span> Cancelled appointments</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.subheader("📈 Calendar Statistics")
+        today = datetime.now().date()
+        month_appointments = [apt for apt in st.session_state.appointments 
+                            if apt['date'].month == current_date.month and apt['date'].year == current_date.year]
+        
+        available_total = len([apt for apt in month_appointments if apt['status'] == 'available'])
+        reserved_total = len([apt for apt in month_appointments if apt['status'] == 'reserved'])
+        cancelled_total = len([apt for apt in month_appointments if apt['status'] == 'cancelled'])
+        
+        st.metric("Available Slots", available_total)
+        st.metric("Reserved Appointments", reserved_total)
+        st.metric("Cancelled Slots", cancelled_total)
+
     # --- Triage Queue ---
     st.header(f"🎯 Triage Queue ({len(df_filtered)} Veterans)")
     
     # Controls
     col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
     with col1:
-        st.markdown("*Veterans prioritized by AI risk assessment. Click rows for detailed view.*")
+        st.markdown("*Veterans prioritized by VA categories and AI risk assessment. Click actions for immediate response.*")
     
     with col2:
-        show_critical_only = st.checkbox("Critical/High Only", value=False)
+        show_priority_only = st.checkbox("Emergent/Urgent Only", value=False)
     
     with col3:
         show_all_columns = st.checkbox("All Columns", value=False)
     
     with col4:
-        # Enhanced export with AI summary
         if not df_filtered.empty:
             if st.button("📥 Export Report"):
-                summary_text = st.session_state.ai_summaries.get('overview', 'AI summary not generated')
+                summary_text = st.session_state.ai_summaries.get('all_patients', 'AI summary not generated')
                 export_data = export_data_with_summary(df_filtered, summary_text)
                 st.download_button(
                     label="💾 Download Complete Report",
@@ -1217,9 +1422,9 @@ def main():
                     mime="text/plain"
                 )
 
-    # Apply critical filter if selected
-    if show_critical_only:
-        df_display = df_filtered[df_filtered['Risk Level'].str.contains('Critical|High', na=False)]
+    # Apply priority filter if selected
+    if show_priority_only:
+        df_display = df_filtered[df_filtered['VA Category'].isin(['Emergent', 'Urgent'])]
     else:
         df_display = df_filtered
 
@@ -1229,42 +1434,75 @@ def main():
             display_columns = df_display.columns.tolist()
         else:
             display_columns = [
-                'Veteran ID', 'Name', 'Risk Level', 'Risk Score', 'Age', 'Gender',
-                'C-SSRS Screen', 'PHQ-9 Score', 'GAD-7 Score', 'Assigned Clinician', 'Last Contact'
+                'Veteran ID', 'Name', 'VA Category', 'Risk Level', 'Age', 'Gender',
+                'C-SSRS Screen', 'PHQ-9 Score', 'GAD-7 Score', 'Treatment Preference',
+                'Assigned Clinician', 'Last Contact'
             ]
         
         display_df = df_display[display_columns].copy()
         
         st.dataframe(
-            style_risk_levels(display_df),
+            style_veterans_table(display_df),
             use_container_width=True,
             hide_index=True,
         )
         
-        # Quick actions for critical cases
-        critical_in_view = df_display[df_display['Risk Level'].str.contains('Critical', na=False)]
-        if not critical_in_view.empty:
-            st.subheader("🚨 Immediate Action Required")
-            for _, veteran in critical_in_view.head(5).iterrows():  # Show top 5 critical
+        # Enhanced quick actions for priority cases
+        emergent_in_view = df_display[df_display['VA Category'] == 'Emergent']
+        urgent_in_view = df_display[df_display['VA Category'] == 'Urgent']
+        
+        if not emergent_in_view.empty:
+            st.subheader("🚨 Emergent Cases - Immediate Action Required")
+            for _, veteran in emergent_in_view.head(5).iterrows():
                 col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
                 with col1:
-                    st.write(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['Risk Level']}")
+                    st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
                 with col2:
-                    st.button("📋 Review", key=f"review_{veteran['Veteran ID']}")
+                    if st.button("📋 Review", key=f"review_{veteran['Veteran ID']}", help="Open clinical review"):
+                        response = handle_button_click("review", veteran['Veteran ID'])
+                        st.success(response)
                 with col3:
-                    st.button("📞 Contact", key=f"contact_{veteran['Veteran ID']}")
+                    if st.button("📞 Contact", key=f"contact_{veteran['Veteran ID']}", help="Prepare contact info"):
+                        response = handle_button_click("contact", veteran['Veteran ID'])
+                        st.success(response)
                 with col4:
-                    st.button("🏥 Crisis", key=f"crisis_{veteran['Veteran ID']}")
+                    if st.button("🏥 Crisis", key=f"crisis_{veteran['Veteran ID']}", help="Activate crisis protocol"):
+                        response = handle_button_click("crisis", veteran['Veteran ID'])
+                        st.error(response)
                 with col5:
-                    st.button("📅 Schedule", key=f"urgent_{veteran['Veteran ID']}")
+                    if st.button("📅 Schedule", key=f"schedule_{veteran['Veteran ID']}", help="Emergency scheduling"):
+                        response = handle_button_click("schedule", veteran['Veteran ID'])
+                        st.info(response)
+        
+        if not urgent_in_view.empty:
+            st.subheader("⚠️ Urgent Cases - Same Day Evaluation Required")
+            for _, veteran in urgent_in_view.head(3).iterrows():
+                col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
+                with col1:
+                    st.markdown(f"**{veteran['Name']}** ({veteran['Veteran ID']}) - {veteran['VA Category']}")
+                with col2:
+                    if st.button("📋 Review", key=f"review_urgent_{veteran['Veteran ID']}", help="Open clinical review"):
+                        response = handle_button_click("review", veteran['Veteran ID'])
+                        st.success(response)
+                with col3:
+                    if st.button("📞 Contact", key=f"contact_urgent_{veteran['Veteran ID']}", help="Prepare contact info"):
+                        response = handle_button_click("contact", veteran['Veteran ID'])
+                        st.success(response)
+                with col4:
+                    if st.button("⚠️ Urgent", key=f"urgent_{veteran['Veteran ID']}", help="Same-day scheduling"):
+                        response = handle_button_click("schedule", veteran['Veteran ID'])
+                        st.warning(response)
+                with col5:
+                    if st.button("📅 Schedule", key=f"schedule_urgent_{veteran['Veteran ID']}", help="Same-day appointment"):
+                        response = handle_button_click("schedule", veteran['Veteran ID'])
+                        st.info(response)
     else:
         st.warning("⚠️ No veterans match the current criteria. Adjust filters to view data.")
 
     # --- Individual Veteran Analysis ---
-    st.header("🔍 Individual Veteran Analysis")
+    st.header("🔍 Individual Patient Analysis")
     
     if not df_filtered.empty:
-        # Veteran selection
         col1, col2 = st.columns([2, 1])
         with col1:
             selected_vet_id = st.selectbox(
@@ -1276,12 +1514,11 @@ def main():
         with col2:
             if st.button("🤖 Generate AI Assessment", key="individual_ai", type="primary"):
                 if selected_vet_id:
-                    with st.spinner("🤖 Generating individual AI assessment..."):
+                    with st.spinner("🤖 Generating individual patient AI assessment..."):
                         vet_data = df_filtered[df_filtered["Veteran ID"] == selected_vet_id]
-                        individual_summary = generate_ai_summary(vet_data, "individual")
+                        individual_summary = generate_ai_summary(vet_data, "individual_patient")
                         st.session_state.ai_summaries[selected_vet_id] = individual_summary
                         
-                        # Show status
                         if "Error" not in individual_summary and "API Error" not in individual_summary:
                             st.success("✅ AI Assessment Generated")
                         else:
@@ -1291,7 +1528,7 @@ def main():
             veteran = df_filtered[df_filtered["Veteran ID"] == selected_vet_id].iloc[0]
             
             # AI Q&A Section for Individual Veteran
-            st.subheader("💬 Ask AI About This Veteran")
+            st.subheader("💬 Ask AI About This Patient")
             col1, col2 = st.columns([3, 1])
             
             with col1:
@@ -1303,18 +1540,17 @@ def main():
             
             with col2:
                 ask_individual_button = st.button(
-                    "🤖 Ask About Veteran", 
+                    "🤖 Ask About Patient", 
                     key=f"ask_individual_{selected_vet_id}",
                     type="secondary"
                 )
             
             # Process individual question
             if ask_individual_button and individual_question:
-                with st.spinner("🤖 Analyzing veteran profile..."):
+                with st.spinner("🤖 Analyzing patient profile..."):
                     vet_data = df_filtered[df_filtered["Veteran ID"] == selected_vet_id]
-                    individual_answer = ask_ai_individual_question(individual_question, vet_data)
+                    individual_answer = ask_ai_question(individual_question, f"Individual patient data: {vet_data.iloc[0].to_dict()}")
                     
-                    # Store the Q&A for this veteran
                     qa_key = f"{selected_vet_id}_qa"
                     if qa_key not in st.session_state:
                         st.session_state[qa_key] = []
@@ -1329,7 +1565,7 @@ def main():
             qa_key = f"{selected_vet_id}_qa"
             if qa_key in st.session_state and st.session_state[qa_key]:
                 st.subheader("📝 Previous Questions & Answers")
-                for i, qa in enumerate(reversed(st.session_state[qa_key])):  # Show most recent first
+                for i, qa in enumerate(reversed(st.session_state[qa_key])):
                     with st.expander(f"Q: {qa['question'][:50]}... ({qa['timestamp']})", expanded=(i==0)):
                         st.markdown(f"**Question:** {qa['question']}")
                         if "Error" not in qa['answer'] and "API Error" not in qa['answer']:
@@ -1337,14 +1573,13 @@ def main():
                             st.info(qa['answer'])
                         else:
                             st.error("❌ AI service unavailable")
-                            st.warning(qa['answer'])
             
             # Display AI assessment if available
             if selected_vet_id in st.session_state.ai_summaries:
                 assessment_text = st.session_state.ai_summaries[selected_vet_id]
                 if "Error" not in assessment_text and "API Error" not in assessment_text:
                     st.markdown(f"""
-                    <div class="ai-summary-box">
+                    <div class="ai-summary-individual">
                     <h4>🤖 AI Clinical Assessment for {veteran['Name']}</h4>
                     <p>{assessment_text}</p>
                     </div>
@@ -1356,19 +1591,27 @@ def main():
             col1, col2 = st.columns([2, 1])
             
             with col1:
-                # Risk assessment display
-                risk_level = veteran['Risk Level']
-                if 'Critical' in risk_level:
-                    st.error(f"**🚨 Risk Level: {risk_level} (Score: {veteran['Risk Score']})**")
-                elif 'High' in risk_level:
-                    st.warning(f"**⚠️ Risk Level: {risk_level} (Score: {veteran['Risk Score']})**")
-                elif 'Medium' in risk_level:
-                    st.info(f"**🔶 Risk Level: {risk_level} (Score: {veteran['Risk Score']})**")
+                # Enhanced VA Category and Risk assessment display
+                va_category = veteran['VA Category']
+                if va_category == 'Emergent':
+                    st.error(f"**🚨 VA Category: {va_category}** - Imminent risk requiring immediate crisis intervention")
+                elif va_category == 'Urgent':
+                    st.warning(f"**⚠️ VA Category: {va_category}** - Same day evaluation or care required")
                 else:
-                    st.success(f"**🟢 Risk Level: {risk_level} (Score: {veteran['Risk Score']})**")
+                    st.success(f"**📋 VA Category: {va_category}** - Timely care needed, not at imminent risk")
                 
+                st.markdown(f"**Risk Level:** {veteran['Risk Level']} (Score: {veteran['Risk Score']})")
                 st.markdown("**Clinical Reasoning:**")
                 st.markdown(f"> {veteran['Risk Explanation']}")
+                
+                # Treatment preference display
+                treatment_pref = veteran['Treatment Preference']
+                if treatment_pref == 'Therapy':
+                    st.markdown("**Treatment Preference:** 🗣️ Therapy Only")
+                elif treatment_pref == 'Medication':
+                    st.markdown("**Treatment Preference:** 💊 Medication Only")
+                else:
+                    st.markdown("**Treatment Preference:** 🔄 Both Therapy & Medication")
                 
                 if veteran['Priority Notes']:
                     st.markdown("**Priority Notes:**")
@@ -1429,17 +1672,19 @@ def main():
                 "Substance Use Risk": veteran['Substance Use Risk'],
                 "Housing Stability": veteran['Housing Status'],
                 "Emergency Contact": veteran['Emergency Contact'],
-                "Transportation Access": veteran['Transportation']
+                "Transportation Access": veteran['Transportation'],
+                "Treatment Preference": veteran['Treatment Preference']
             }
             
             cols = st.columns(4)
             for i, (factor, value) in enumerate(risk_factors.items()):
                 with cols[i % 4]:
-                    # Color coding based on risk level
                     if factor == "Suicide Risk (C-SSRS)":
                         color = "🔴" if value != "Negative" else "🟢"
                     elif factor == "Self-Harm Ideation":
                         color = "🔴" if value == "Yes" else "🟢"
+                    elif factor == "Treatment Preference":
+                        color = "🔵"  # Neutral for treatment preference
                     elif "Low" in str(value) or "Homeless" in str(value) or "None" in str(value):
                         color = "🔴"
                     elif "Medium" in str(value) or "At Risk" in str(value) or "Limited" in str(value):
@@ -1449,30 +1694,30 @@ def main():
                     
                     st.markdown(f"**{factor}:**<br>{color} {value}", unsafe_allow_html=True)
 
-            # Clinical actions
-            st.markdown("### 🎯 Recommended Clinical Actions")
+            # Enhanced clinical actions
+            st.markdown("### 🎯 Clinical Actions")
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.button("📋 Update Assessment", key="update_assessment")
+                if st.button("📋 Update Assessment", key="update_assessment"):
+                    response = handle_button_click("update_assessment", veteran['Veteran ID'])
+                    st.success(response)
             
             with col2:
                 if st.button("📞 Contact Info", key="prep_contact"):
-                    contact_info = f"""
-                    **Contact Information for {veteran['Name']}:**
-                    - Preferred Method: {veteran['Contact Method']}
-                    - Last Contact: {veteran['Last Contact']}
-                    - Emergency Contact: {veteran['Emergency Contact']}
-                    """
-                    st.info(contact_info)
+                    response = handle_button_click("prep_contact", veteran['Veteran ID'])
+                    st.info(response)
             
             with col3:
                 if st.button("📅 Schedule Appointment", key="schedule_appt"):
-                    urgency = "URGENT" if 'Critical' in veteran['Risk Level'] else "Standard"
+                    response = handle_button_click("schedule_appt", veteran['Veteran ID'])
+                    urgency = "URGENT" if veteran['VA Category'] in ['Emergent', 'Urgent'] else "ROUTINE"
                     st.success(f"{urgency} appointment scheduling initiated")
             
             with col4:
-                st.button("📧 Generate Referral", key="generate_referral")
+                if st.button("📧 Generate Referral", key="generate_referral"):
+                    response = handle_button_click("generate_referral", veteran['Veteran ID'])
+                    st.success(response)
 
             # Clinical notes interface
             st.markdown("### 📝 Clinical Documentation")
@@ -1497,6 +1742,7 @@ def main():
                 st.markdown("- Note risk factors and protective factors")
                 st.markdown("- Document intervention plans")
                 st.markdown("- Include follow-up requirements")
+                st.markdown("- Consider treatment preferences")
                 
                 if st.button("💾 Save Documentation"):
                     if clinical_note:
@@ -1505,9 +1751,8 @@ def main():
                     else:
                         st.warning("Please enter documentation before saving")
 
-            # Export individual veteran report with Q&A
+            # Enhanced export individual veteran report
             if st.button("📊 Generate Individual Report"):
-                # Include Q&A history in the report
                 qa_history = ""
                 qa_key = f"{selected_vet_id}_qa"
                 if qa_key in st.session_state and st.session_state[qa_key]:
@@ -1522,9 +1767,11 @@ INDIVIDUAL VETERAN ASSESSMENT REPORT
 Veteran: {veteran['Name']} ({veteran['Veteran ID']})
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-RISK ASSESSMENT:
+VA TRIAGE CATEGORY: {veteran['VA Category']}
 Risk Level: {veteran['Risk Level']} (Score: {veteran['Risk Score']})
 Clinical Reasoning: {veteran['Risk Explanation']}
+
+TREATMENT PREFERENCES: {veteran['Treatment Preference']}
 
 CLINICAL SCORES:
 - PHQ-9 (Depression): {veteran['PHQ-9 Score']} - {get_score_interpretation(veteran['PHQ-9 Score'], "PHQ-9")[0]}
@@ -1556,7 +1803,7 @@ Generated by TriageView Clinical Decision Support System
     # --- System Information ---
     st.markdown("---")
     st.markdown("### 📊 System Status")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
         st.info(f"**Total Veterans:** {len(df)}")
@@ -1564,13 +1811,15 @@ Generated by TriageView Clinical Decision Support System
         st.info(f"**Current View:** {len(df_filtered)}")
     with col3:
         ai_count = len([k for k in st.session_state.ai_summaries.keys() if not st.session_state.ai_summaries[k].startswith("Error")])
-        st.info(f"**AI Summaries Generated:** {ai_count}")
+        st.info(f"**AI Summaries:** {ai_count}")
     with col4:
+        st.info(f"**Calendar Slots:** {len(st.session_state.appointments)}")
+    with col5:
         st.info(f"**Last Updated:** {datetime.now().strftime('%H:%M:%S')}")
 
-    # Quick add veteran button (placeholder for future integration)
+    # Quick add veteran button
     if st.button("➕ Add New Veteran", key="add_veteran"):
-        st.info("📋 New veteran intake form will open here (integration with intake app)")
+        st.info("📋 New veteran intake form will open here (integration with intake system)")
 
     # API Status Check
     st.sidebar.markdown("---")

@@ -1825,15 +1825,6 @@ def main():
                 if veteran['Priority Notes']:
                     st.markdown("**Priority Notes:**")
                     st.markdown(f"> {veteran['Priority Notes']}")
-            
-            # with col2:
-            #     st.markdown("### 👤 Demographics")
-            #     st.markdown(f"**Name:** {veteran['Name']}")
-            #     st.markdown(f"**Age:** {veteran['Age']} | **Gender:** {veteran['Gender']}")
-            #     st.markdown(f"**Branch:** {veteran['Branch']}")
-            #     st.markdown(f"**Service Era:** {veteran['Service Era']}")
-            #     st.markdown(f"**Intake:** {veteran['Intake Date']}")
-            #     st.markdown(f"**Clinician:** {veteran['Assigned Clinician']}")
 
             with col2:
                 st.markdown("### 👤 Demographics")

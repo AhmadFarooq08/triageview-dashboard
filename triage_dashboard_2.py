@@ -1832,11 +1832,9 @@ def main():
                 st.markdown(f"**Age:** {veteran['Age']} | **Gender:** {veteran['Gender']}")
                 st.markdown(f"**Branch:** {veteran['Branch']}")
                 st.markdown(f"**Service Era:** {veteran['Service Era']}")
-                # Format intake date to show only date, no time
-                intake_date_display = veteran['Intake Date']
-                if isinstance(intake_date_display, str) and ' ' in intake_date_display:
-                    intake_date_display = intake_date_display.split(' ')[0]
-                st.markdown(f"**Intake:** {intake_date_display}")
+                # Clean the intake date display to remove time
+                intake_date_clean = str(veteran['Intake Date']).split(' ')[0] if ' ' in str(veteran['Intake Date']) else str(veteran['Intake Date'])
+                st.markdown(f"**Intake:** {intake_date_clean}")
                 st.markdown(f"**Clinician:** {veteran['Assigned Clinician']}")    
 
             # Clinical scores with interpretation (without arrows)

@@ -489,7 +489,7 @@ def load_enhanced_css():
     """, unsafe_allow_html=True)
 
 # --- AI Integration Functions ---
-def call_gemini_api(prompt, model="gemini-1.5-flash"):
+def call_gemini_api(prompt, model="gemini-2.0-flash"):
     """Call Gemini API with proper error handling"""
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"

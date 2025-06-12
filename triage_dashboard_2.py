@@ -624,7 +624,7 @@ Respond in clear, professional language appropriate for clinical decision-making
 # --- Enhanced Synthetic Data Generation ---
 @st.cache_data
 def generate_synthetic_data(num_records=100):
-    """Generate consistent synthetic veteran mental health data"""
+    """Generate realistic synthetic veteran mental health data"""
     random.seed(42)
     np.random.seed(42)
     
@@ -633,12 +633,83 @@ def generate_synthetic_data(num_records=100):
         'Negative', 'Positive - Passive Ideation', 'Positive - Active Ideation', 'Positive - Recent Behavior'
     ]
     
-    first_names = ['James', 'Michael', 'Robert', 'John', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Christopher',
-                   'Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen']
+    # Separate male and female names for accurate gender matching
+    male_first_names = ['James', 'Michael', 'Robert', 'John', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Christopher',
+                        'Daniel', 'Matthew', 'Anthony', 'Mark', 'Donald', 'Steven', 'Paul', 'Andrew', 'Joshua', 'Kenneth',
+                        'Kevin', 'Brian', 'George', 'Timothy', 'Ronald', 'Jason', 'Edward', 'Jeffrey', 'Ryan', 'Jacob']
+    
+    female_first_names = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen',
+                          'Lisa', 'Nancy', 'Betty', 'Helen', 'Sandra', 'Donna', 'Carol', 'Ruth', 'Sharon', 'Michelle',
+                          'Laura', 'Sarah', 'Kimberly', 'Deborah', 'Dorothy', 'Lisa', 'Nancy', 'Karen', 'Betty', 'Helen']
+    
     last_names = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
-                  'Anderson', 'Taylor', 'Thomas', 'Hernandez', 'Moore', 'Martin', 'Jackson', 'Thompson', 'White', 'Lopez']
+                  'Anderson', 'Taylor', 'Thomas', 'Hernandez', 'Moore', 'Martin', 'Jackson', 'Thompson', 'White', 'Lopez',
+                  'Lee', 'Gonzalez', 'Harris', 'Clark', 'Lewis', 'Robinson', 'Walker', 'Perez', 'Hall', 'Young']
+    
+    # Pre-generate ages with median of 50
+    ages = []
+    # Create age distribution centered around 50
+    for _ in range(num_records):
+        # Use normal distribution centered at 50 with appropriate spread
+        age = int(np.random.normal(50, 12))  # Standard deviation of 12 gives good spread
+        # Clamp to realistic veteran age range
+        age = max(22, min(80, age))
+        ages.append(age)
+    
+    # Sort ages to ensure median is close to 50
+    ages.sort()
+    # Adjust if needed to ensure median is exactly 50
+    mid_point = len(ages) // 2
+    if len(ages) % 2 == 0:
+        current_median = (ages[mid_point - 1] + ages[mid_point]) / 2
+        adjustment = 50 - current_median
+        for i in range(len(ages)):
+            ages[i] = max(22, min(80, int(ages[i] + adjustment)))
+    else:
+        ages[mid_point] = 50
+    
+    # Shuffle ages to randomize assignment
+    random.shuffle(ages)
     
     for i in range(num_records):
+        # Generate gender first (85% male, 15% female based on VA demographics)
+        gender = random.choices(["Male", "Female"], weights=[0.85, 0.15], k=1)[0]
+        
+        # Choose appropriate first name based on gender
+        if gender == "Male":
+            first_name = random.choice(male_first_names)
+        else:
+            first_name = random.choice(female_first_names)
+        
+        # Use pre-generated age with median 50
+        age = ages[i]
+        current_year = 2025
+        birth_year = current_year - age
+        
+        # Determine service era based on realistic age and service periods
+        if age >= 70:  # Born 1955 or earlier
+            service_era = "Vietnam"
+            enlistment_age = random.randint(18, 25)
+        elif age >= 55:  # Born 1956-1970
+            service_era = random.choices(["Vietnam", "Gulf War"], weights=[0.3, 0.7], k=1)[0]
+            enlistment_age = random.randint(18, 25)
+        elif age >= 40:  # Born 1971-1985
+            service_era = random.choices(["Gulf War", "OEF/OIF"], weights=[0.4, 0.6], k=1)[0]
+            enlistment_age = random.randint(18, 30)
+        elif age >= 30:  # Born 1986-1995
+            service_era = "OEF/OIF"
+            enlistment_age = random.randint(18, 25)
+        else:  # Born 1996+
+            service_era = random.choices(["OEF/OIF", "Recent"], weights=[0.7, 0.3], k=1)[0]
+            enlistment_age = random.randint(18, 22)
+        
+        # Generate realistic branch distribution
+        branch = random.choices(
+            ["Army", "Navy", "Air Force", "Marines", "Coast Guard"], 
+            weights=[0.36, 0.26, 0.24, 0.13, 0.01], k=1
+        )[0]
+        
+        # Generate clinical scores with realistic correlations
         c_ssrs_status = random.choices(c_ssrs_options, weights=[0.78, 0.14, 0.06, 0.02], k=1)[0]
         phq9_q9_suicide = "No"
         
@@ -664,25 +735,21 @@ def generate_synthetic_data(num_records=100):
             if phq9_score > 12:
                 phq9_q9_suicide = random.choices(["Yes", "No"], weights=[0.1, 0.9], k=1)[0]
 
-        age = random.randint(22, 75)
-        gender = random.choices(["Male", "Female", "Other"], weights=[0.85, 0.14, 0.01], k=1)[0]
+        # Generate realistic intake date (last 30 days, business hours)
+        days_ago = random.randint(0, 30)
+        intake_date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y-%m-%d")
         
-        if age > 65:
-            service_era = "Vietnam"
-        elif age > 50:
-            service_era = random.choice(["Vietnam", "Gulf War"])
-        elif age > 35:
-            service_era = random.choice(["Gulf War", "OEF/OIF"])
-        else:
-            service_era = random.choice(["OEF/OIF", "Recent"])
+        # Generate realistic last contact (within last 7 days)
+        contact_days_ago = random.randint(0, 7)
+        last_contact = (datetime.now() - timedelta(days=contact_days_ago)).strftime("%Y-%m-%d")
 
         record = {
             "Veteran ID": f"VET-{1000 + i:04d}",
-            "Name": f"{random.choice(first_names)} {random.choice(last_names)}",
-            "Intake Date": (datetime.now() - timedelta(days=random.randint(0, 30))).strftime("%Y-%m-%d"),
+            "Name": f"{first_name} {random.choice(last_names)}",
+            "Intake Date": intake_date,
             "Age": age,
             "Gender": gender,
-            "Branch": random.choice(["Army", "Navy", "Air Force", "Marines", "Coast Guard", "Space Force"]),
+            "Branch": branch,
             "Service Era": service_era,
             "C-SSRS Screen": c_ssrs_status,
             "PHQ-9 Q9 (Self-Harm)": phq9_q9_suicide,
@@ -694,7 +761,7 @@ def generate_synthetic_data(num_records=100):
             "Housing Status": random.choices(["Stable", "At Risk", "Homeless"], weights=[0.75, 0.18, 0.07], k=1)[0],
             "Previous Mental Health Treatment": random.choices(["Yes", "No"], weights=[0.65, 0.35], k=1)[0],
             "Treatment Preference": random.choices(["Therapy", "Medication", "Both"], weights=[0.35, 0.25, 0.4], k=1)[0],
-            "Last Contact": (datetime.now() - timedelta(days=random.randint(0, 7))).strftime("%Y-%m-%d"),
+            "Last Contact": last_contact,
             "Assigned Clinician": random.choice(["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Davis", "Unassigned"]),
             "Priority Notes": random.choice(["", "Family concerns", "Recent hospitalization", "Employment issues", 
                                            "Financial stress", "Medication compliance", "Transportation barriers", ""]),

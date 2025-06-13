@@ -1605,7 +1605,7 @@ def main():
             st.info("No data available for intake timeline.")
 
     # --- Key Metrics Dashboard ---
-    st.header("📈 Key Performance Indicators")
+    st.header("📈 VA Triage Overview")
     
     col1, col2, col3, col4, col5, col6 = st.columns(6, gap="small")
     
@@ -1635,7 +1635,7 @@ def main():
 
     # Additional clinical metrics
     if not df_filtered.empty:
-        st.subheader("🔍 Clinical Insights")
+        st.subheader("🔍 Risk Factor Analysis")
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:

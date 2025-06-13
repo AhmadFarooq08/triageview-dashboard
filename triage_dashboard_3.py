@@ -819,7 +819,7 @@ def generate_synthetic_data(num_records=100):
 def pull_data_from_database():
     """Pull data from the database or generate synthetic data if no database connection"""
     try:
-        response = requests.get("http://localhost:4001/api/veterans/dashboard", timeout=10)
+        response = requests.get("https://rapidroute-api.vercel.app/api/veterans/dashboard", timeout=10)
         response.raise_for_status()  # Raise an error for HTTP errors
         json_response = response.json()
         

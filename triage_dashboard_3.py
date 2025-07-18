@@ -36,7 +36,7 @@ COLORS = {
 }
 
 # --- Gemini AI Configuration ---
-GEMINI_API_KEY = "AIzaSyAdvvEDdIaXUqQvNR__5NB_RDHkzAzKuXc"
+GEMINI_API_KEY = "USE_YOUR_GEMINI_API_KEY_HERE"
 
 # --- Initialize session state ---
 def initialize_session_state():
